@@ -5243,19 +5243,19 @@
         unique: true,
         key: 'hires',
         value: 10,
-        desc: 'You\'ve hired 10 people to help you.'
+        desc: '你已经雇佣了10人来帮助你。'
     }, {
         name: 'Senior Manager',
         unique: true,
         key: 'hires',
         value: 50,
-        desc: 'You\'ve hired 50 people to help you.'
+        desc: '你已经雇佣了50人来帮助你。'
     }, {
         name: 'VP Manager',
         unique: true,
         key: 'hires',
         value: 200,
-        desc: 'You\'ve hired 200 people to help you.'
+        desc: '你已经雇佣了200人来帮助你。'
     },
 
     /// CLICKS
@@ -5264,25 +5264,25 @@
         unique: true,
         key: 'clicks',
         value: 500,
-        desc: 'You clicked 500 times already. How is your finger?'
+        desc: '你已经点击了500次。 你的手指怎么样？'
     }, {
         name: 'Junior Clicker',
         unique: true,
         key: 'clicks',
         value: 5000,
-        desc: 'You clicked 5000 times already. Ok.'
+        desc: '你已经点击了5000次。 好。'
     }, {
         name: 'Senior Clicker',
         unique: true,
         key: 'clicks',
         value: 10000,
-        desc: '10000 clicks!! That\'s something'
+        desc: '10000 次点击!! 真是了不起'
     }, {
         name: 'Senior Clicker',
         unique: true,
         key: 'clicks',
         value: 50000,
-        desc: 'Looks like you\'re going somewhere!'
+        desc: '看起来你要去某个地方！!'
     }];
 
 }());
@@ -5294,15 +5294,15 @@
     var definitions = bloom.ns('game.definitions');
 
     definitions.facts = [
-        'Temperature lags 30 years behind CO2 concentration.',
-        'Trees take usually one year to grow enough to absorb CO2 and be chopped.',
-        'The Eco dome wins you the game. But is that what you really want?',
-        'Researches can significantly improve your clicks!',
-        'If the temperature anomaly exceed 3.5°C, you lose!',
-        'If the temperature anomaly pass under -6°C, you lose.',
-        'If the CO2 concentration goes below 230PPM, you\'re good for an Ice Age.',
-        'The big green button let you plant trees.',
-        'The number of growing trees is visible in a tooltip when hovering the top trees counter.'
+        '温度滞后于二氧化碳浓度30年。',
+        '树木通常需要一年的时间才能长到足够吸收二氧化碳并被砍伐。',
+        '生态穹顶为你赢得了这场比赛。但这就是你真正想要的吗?',
+        '研究可以显著提高你的点击效果!',
+        '如果温度异常超过3.5℃，你就输了!',
+        '如果温度异常超过-6°C，你就输了。',
+        '如果二氧化碳浓度低于230PPM，你就适合进入冰河时代。',
+        '绿色的大按钮可以让你种树。',
+        '当鼠标悬停在树顶计数器时，在工具提示中可以看到正在生长的树的数量。'
     ];
 }());
 /*global bloom*/
@@ -5322,7 +5322,7 @@
         },
         tiers: 20,
         yields: 0,
-        desc: 'Improves each planting click by 100%.'
+        desc: '将每次种植点击量提高100%。'
     }, {
         name: 'Fortune Click',
         type: 'research',
@@ -5333,7 +5333,7 @@
         },
         tiers: 20,
         yields: 0,
-        desc: 'Improves each chopping click by 100%.'
+        desc: '将每次砍树点击提高100%。'
     }, {
         name: 'XP Click',
         type: 'research',
@@ -5344,7 +5344,7 @@
         },
         tiers: 5,
         yields: 0,
-        desc: 'Doubles level progress for each click.'
+        desc: '每点击一次，将获得双倍的等级进度。'
     }, {
         name: 'Permaculture',
         type: 'research',
@@ -5355,7 +5355,7 @@
         },
         tiers: 10,
         yields: 0,
-        desc: 'Workers plant 10% more trees.'
+        desc: '工人们种树增加10%。'
     }, {
         name: 'Blue Manager',
         type: 'research',
@@ -5366,7 +5366,7 @@
         },
         tiers: 10,
         yields: 0,
-        desc: 'Each worker produces 0.01 XP every week.'
+        desc: '每个工人每周生产0.01 经验。'
     }, {
         name: 'Gold Manager',
         type: 'research',
@@ -5378,7 +5378,7 @@
         },
         tiers: 10,
         yields: 0,
-        desc: 'Workers cost is reduced by 5%. Advocates and Activists raise 20% more money.'
+        desc: '工人成本降低了5%。支持者和积极分子筹集了更多20%的资金。'
     }, {
         name: 'Forestry tech',
         type: 'research',
@@ -5390,7 +5390,7 @@
         },
         tiers: 5,
         yields: 0,
-        desc: 'Improves planting clicks by 100%. Improve workers planting rate by 10%.'
+        desc: '提高种植点击率100%。提高工人种植率10%。'
     }, {
         name: 'Harvest Tech',
         type: 'research',
@@ -5402,7 +5402,7 @@
         },
         tiers: 5,
         yields: 0,
-        desc: 'Improves chopping clicks by 100%. Workers chop 10% more trees.'
+        desc: '提高100%的砍树点击。工人们砍树提升10%。'
     }, {
         name: 'Net of Stuff',
         type: 'research',
@@ -5418,7 +5418,7 @@
         },
         tiers: 5,
         yields: 0,
-        desc: 'Connect the trees! And everything else. Improves planting and chopping clicks by 10%, workers planting, chopping and gold raising rate by 10%. CO2 emissions increase by 2%.'
+        desc: '连接树木!以及其他一切。提高种植和砍树点击效果10%，工人种植，切割和黄金效果提高10%。二氧化碳排放量增加2%。'
     }, {
         name: 'GMOs',
         type: 'research',
@@ -5430,7 +5430,7 @@
         },
         yields: 0,
         tiers: 5,
-        desc: 'Genetically modified trees grow fast! Increase planting rate by 20%. Increase trees resistance to diseases by 10%.'
+        desc: '转基因树长得很快!种植速度提高20%。增加树木对疾病的抵抗力10%。'
     }, {
         name: 'Eco dome',
         type: 'research',
@@ -5441,7 +5441,7 @@
         size: 'large',
         yields: 0,
         tiers: 1,
-        desc: 'Save your rich ass from global warming: build an Eco dome, that will protect you and your peers for thousands of years. Win the game.'
+        desc: '从全球变暖中拯救你富有的屁股:建造一个生态圆顶，它将保护你和你的同龄人几千年。赢得这场比赛。'
     },
 
 
@@ -5465,7 +5465,7 @@
             ppmPerYearMultiplier: 1.001
         },
         yields: 2,
-        desc: 'Sell some merch branded: "Save the planet!". CO2 emissions increased by 0.1%. 2 extra gold per week.'
+        desc: '卖一些“拯救地球!”的标牌。二氧化碳排放量增加0.1%。每周增加额外2黄金。'
     }, {
         name: 'Media Campaign',
         level: 1,
@@ -5474,7 +5474,7 @@
             plant: 1.10
         },
         yields: 0,
-        desc: 'Boost planting with a Media Campaign. Increase workers planting rate by 10%.'
+        desc: '通过媒体宣传来促进种植。提高工人种植率10%。'
     }, {
         name: 'Free firewood',
         level: 2,
@@ -5484,7 +5484,7 @@
             chop: 1.2
         },
         yields: 40,
-        desc: 'Freedom of getting firewood! Increase chop rate by 20%, increase CO2 emissions by 1%. 40 extra gold per week.'
+        desc: '自由的柴火!提高20%的砍伐率，增加1%的二氧化碳排放量。每周多赚40黄金。'
     }, {
         name: 'National Parks',
         level: 3,
@@ -5493,7 +5493,7 @@
             ppmPerYearMultiplier: 0.99,
             chop: 0.95
         },
-        desc: 'Protect the nature! Reduce chopping rate by 5%, decrease CO2 emissions by 1%.'
+        desc: '保护大自然!减少5%的砍树速度，减少1%的二氧化碳排放。'
     }, {
         name: 'Free market',
         level: 4,
@@ -5502,7 +5502,7 @@
             chop: 1.2,
         },
         yields: 100,
-        desc: 'Increase chopping rate by 20%. 100 gold per week.'
+        desc: '将砍树速度提高20%。每周100黄金。'
     },{
         name: 'Recycling act',
         level: 5,
@@ -5511,7 +5511,7 @@
             ppmPerYearMultiplier: 0.95
         },
         yields: 0,
-        desc: 'Cut CO2 emissions by 5%.'
+        desc: '减少5%的二氧化碳排放。'
     }, {
         name: 'Lobbying',
         level: 6,
@@ -5523,7 +5523,7 @@
             chop: 0.8
         },
         yields: 0,
-        desc: 'Take on the Congress! Decrease the price of adopting policies by 10%, revoking policies costs 20% less. Decrease workers planting and chopping rate by 20%.'
+        desc: '挑战国会!将采用政策的价格降低10%，撤销政策的成本降低20%。减少工人种植和砍伐率20%。'
     }, {
         name: 'Popular initiative',
         level: 7,
@@ -5533,7 +5533,7 @@
             chop: 0.80
         },
         yields: 0,
-        desc: 'Workers plant trees on their free time! And sometimes on work time. Increase planting rate by 50%, reduce chopping rate by 20%.'
+        desc: '工人们在空闲时间种树!有时在工作时间。增加50%的种植速度，减少20%的砍伐速度。'
     }, {
         name: 'UBI',
         level: 8,
@@ -5544,7 +5544,7 @@
             chop: 1.2
         },
         yields: 0,
-        desc: 'Universal Basic Income provides every human a salary: makes people feel valuable. Decrease CO2 emissions by 10%. Increase workers planting and chopping rate by 20%.'
+        desc: '全民基本收入为每个人提供了一份薪水:让人们感到自己的价值。减少10%的二氧化碳排放。增加工人种植和砍伐率20%。'
     },
     {
         name: 'Air traffic ban',
@@ -5555,7 +5555,7 @@
         },
         yields: 0,
         ban: ['Plane', 'Helicopter'],
-        desc: 'Decrease CO2 emissions by 5%. Plane and helicopter workers are grounded unless "Emergency State" is adopted.'
+        desc: '减少5%的二氧化碳排放。除非采取“紧急状态”，否则飞机和直升机工作人员将被停飞。'
     },
     {
         name: 'Emergency State',
@@ -5568,7 +5568,7 @@
         yields: 0,
         ban: ['Activist', 'Advocate'],
         unban: ['Plane', 'Helicopter'],
-        desc: 'Also known as Police State! Plane and helicopter workers operational even if "Air traffic ban" policy adopted. Activists and Advocates can\'t demonstrate. Workers and and click planting divided by 2.'
+        desc: '也被称为警察国家!飞机和直升机工作人员即使采取了“空中交通禁令”政策也能正常工作。活动人士和拥护者不能示威。工人和点击种植效果除以2。'
     },
 
     {
@@ -5579,7 +5579,7 @@
             ppmPerYearMultiplier: 0.95
         },
         yields: 0,
-        desc: 'Cut CO2 emissions by 5%.'
+        desc: '减少5%的二氧化碳排放。'
     }, {
         name: 'Carbon tax',
         level: 12,
@@ -5588,7 +5588,7 @@
             ppmPerYearMultiplier: 0.9
         },
         yields: 5000,
-        desc: 'Cut CO2 emissions by 10%, gain 5000 gold every week.'
+        desc: '减少10%的二氧化碳排放，每周收获5000黄金。'
     },
     {
         name: 'Free-trade Zones',
@@ -5599,7 +5599,7 @@
             ppmPerYearMultiplier: 1.2
         },
         yields: 10000,
-        desc: 'Let companies do their business behind closed doors, and give them yuge tax cuts. Increase workers chopping rate by 50%. Increase CO2 emissions by 20%. 10 000 extra gold per week, thanks to corruption.'
+        desc: '让公司关起门来做生意，给他们减税。将工人的砍伐率提高50%。二氧化碳排放量增加20%。由于腐败，每周增加1万金币。'
     }, {
         name: 'Coal power ban',
         level: 14,
@@ -5607,7 +5607,7 @@
         multipliers: {
             ppmPerYearMultiplier: 0.85
         },
-        desc: 'Cut CO2 emissions by 15%.'
+        desc: '减少15%的二氧化碳排放。'
     }, {
         name: 'Gas cars ban',
         level: 15,
@@ -5616,7 +5616,7 @@
         multipliers: {
             ppmPerYearMultiplier: 0.85
         },
-        desc: 'Cut CO2 emissions by 15%.'
+        desc: '减少15%的二氧化碳排放。'
     }, {
         name: 'Sanctuaries',
         level: 16,
@@ -5626,7 +5626,7 @@
             chop: 0.4,
             clickChop: 0.4
         },
-        desc: 'National Parks are not enough: entire parts of the world are sanctuarized, for Nature to find a new balance. Cut CO2 emissions by 10%. Decrease click and workers chopping rate by 60%.'
+        desc: '国家公园是不够的:世界上的所有地方都是保护区，让大自然找到新的平衡。减少10%的二氧化碳排放。减少点击和工人砍伐60%。'
     }];
 
 }());
@@ -5654,7 +5654,7 @@
         yields: 1,
         level: 0,
         yieldsGold: 0,
-        desc: 'Florists like nature. Incidentally, [yields] will grow every week.'
+        desc: '花匠喜欢大自然。 偶然, [yields] 每周都会成长。'
     }, {
         name: 'Gatherer',
         max: 400,
@@ -5664,7 +5664,7 @@
         level: 0,
         chop: 1,
         yieldsGold: 0,
-        desc: 'These guys visit the forest and gather firewood. [chop] is chopped every week.'
+        desc: '这些家伙参观森林并采集柴火。 [chop] 每周都会被砍伐'
     }, {
         name: 'Arborist',
         max: 300,
@@ -5674,7 +5674,7 @@
         chop: 1,
         level: 1,
         yieldsGold: 0,
-        desc: 'Arborists manage your forest: they plant [yields] and chop [chop] every week.'
+        desc: '树艺师管理森林: 他们种植 [yields] 和砍伐 [chop] 每周.'
     }, {
         name: 'Activist',
         max: 300,
@@ -5683,7 +5683,7 @@
         yields: 1,
         level: 1,
         yieldsGold: 6,
-        desc: 'Activists help raise money for your organization. Each raise [yieldsGold] per week. They also plant trees from time to time ([yields] per week).'
+        desc: '活动家帮助为您的组织筹集资金。 每次筹集 [yieldsGold] 每周。 他们还不时种植 ([yields] 每周).'
     }, {
         name: 'Forester',
         max: 200,
@@ -5692,7 +5692,7 @@
         yields: 100,
         level: 2,
         yieldsGold: 0,
-        desc: 'Foresters plant [yields] every week.'
+        desc: '护林人种植 [yields] 每周.'
     }, {
         name: 'Lumberjack',
         max: 200,
@@ -5702,7 +5702,7 @@
         level: 2,
         chop: 100,
         yieldsGold: 0,
-        desc: 'Lumberjacks are professionals who chop [chop] every week.'
+        desc: '伐木工人是砍伐的专业人士，砍树 [chop] 每周.'
     }, {
         name: 'Ranger',
         max: 150,
@@ -5711,7 +5711,7 @@
         yields: 600,
         level: 3,
         yieldsGold: 0,
-        desc: 'Rangers plant [yields] every week.'
+        desc: '巡游者种植 [yields] 每周.'
     }, {
         name: 'Advocate',
         max: 150,
@@ -5721,7 +5721,7 @@
         level: 3,
         chop: 0,
         yieldsGold: 400,
-        desc: 'Advocates are more powerfull than activists: they raise [yieldsGold] per week!'
+        desc: '倡导者比积极分子更强大: 他们募集 [yieldsGold] 每周!'
     }, {
         name: 'District Ranger',
         max: 100,
@@ -5730,7 +5730,7 @@
         yields: 3500,
         level: 4,
         yieldsGold: 0,
-        desc: 'District Rangers plant [yields] every week.'
+        desc: '护林员种树 [yields] 每周。'
     }, {
         name: 'Delimber',
         max: 100,
@@ -5740,7 +5740,7 @@
         level: 4,
         chop: 3500,
         yieldsGold: 0,
-        desc: 'Delimbers are light harvesting vehicules that chop [chop] per week.'
+        desc: '打枝机是砍伐的轻型收割车，砍树 [chop] 每周。'
     }, {
         name: 'Tree planter',
         max: 75,
@@ -5749,7 +5749,7 @@
         yields: 20000,
         level: 5,
         yieldsGold: 0,
-        desc: 'Planting machine! They plant [yields] per week.'
+        desc: '播种机器。 它们种树 [yields] 每周。'
     }, {
         name: 'Harvester',
         max: 75,
@@ -5759,7 +5759,7 @@
         level: 5,
         chop: 20000,
         yieldsGold: 0,
-        desc: 'Harvesters chop [chop] per week.'
+        desc: '收割机砍树 [chop] 每周.'
     }, {
         name: 'Helicopter',
         max: 50,
@@ -5768,7 +5768,7 @@
         yields: 100000,
         level: 6,
         yieldsGold: 0,
-        desc: 'Aerial seeding is very efficient: helicopters plant [yields] per week!'
+        desc: '空中播种非常有效: 直升机播种 [yields] 每周！'
     }, {
         name: 'Heavy delimber',
         max: 50,
@@ -5778,7 +5778,7 @@
         level: 6,
         chop: 80000,
         yieldsGold: 0,
-        desc: 'Heavy delimbers are a lot better than delimbers: they chop [chop] per week.'
+        desc: '重型打枝机比打枝机好很多: 它们砍树 [chop] 每周.'
     }, {
         name: 'Plane',
         max: 25,
@@ -5787,7 +5787,7 @@
         yields: 500000,
         level: 7,
         yieldsGold: 0,
-        desc: 'Aerial seeding is very efficient: [yields] per week are planted!',
+        desc: '空中播种非常有效: [yields] 每周 种植!',
         type: 'plane'
     }, {
         name: 'Grapple',
@@ -5798,7 +5798,7 @@
         chop: 250000,
         level: 7,
         yieldsGold: 0,
-        desc: 'Grapples are powerful machines that chop [chop] per week.'
+        desc: '抓钩是强大的机器，它们砍树 [chop] 每周。'
     }];
 
 }());
