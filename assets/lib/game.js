@@ -3174,7 +3174,7 @@
         this.bannedWorkers = [];
         this.refreshBannedWorkers();
         this.hideInitialScreen();
-        this.screen.displayNews('info', 'Welcome to <span>EcoClicker</span>!', 'Click the <span class="text-green">big green button</span> to start planting trees!');
+        this.screen.displayNews('info', '欢迎来到 <span>环保点击</span>!', '点击 <span class="text-green">绿色大按钮</span> 去开始种树!');
         this.screen.refresh();
         this.screen.addButtons();
         this.displayInitialMessage();
@@ -4252,7 +4252,7 @@
             dom.get('#new-game-btn').style.display = 'block';
         }
 
-        dom.get('#facts').textContent = 'Random fact: ' + this.getFact();
+        dom.get('#facts').textContent = '随机爆料: ' + this.getFact();
     };
 
     game.MainScreenComponent.prototype.getFact = function () {
