@@ -3452,7 +3452,7 @@
             s.increment('year');
 
             if (this.getActualPPMPerYear() > 0) {
-                title = '新年快乐 (sort of)';
+                title = '新年快乐 (排序)';
                 sentence = '现在 {0} 年了, 二氧化碳浓度仍在增加。我们需要更多的树!';
             } else if (this.getActualPPMPerYear() === 0) {
                 title = '新年快乐!';
@@ -4808,7 +4808,7 @@
 
     game.ScreenComponent.prototype.displayAchievement = function (achievement) {
         this.displayNews('achievement',
-                         string.format('New achievement: <span>{0}</span>!', achievement.name),
+                         string.format('新成就: <span>{0}</span>!', cnItem(achievement.name)),
                          achievement.desc);
         /*
         this.emitter.emit(this.system, 20, function () {
@@ -4932,11 +4932,11 @@
         }
         n = this.state.get(workerOrImpr.name);
         if (n > 0) {
-            txt += string.format('<br /><br />[Shift + Click] to sell for {0} gold',
+            txt += string.format('<br /><br />按 [Shift + Click] 去出售获得 {0} 黄金',
                 utilities.prettify(this.actor.getWorkerSellPrice(workerOrImpr), '&nbsp;'));
         }
         if (this.actor.isWorkerBanned(workerOrImpr)) {
-            txt += string.format('<br /><br />A policy prevent this worker to be functional!',
+            txt += string.format('<br /><br />策略阻止此工作人员正常工作!',
                 utilities.prettify(this.actor.getWorkerSellPrice(workerOrImpr), '&nbsp;'));
         }
 
@@ -4955,7 +4955,7 @@
 
         has = this.state.get('improvements').indexOf(impr.name) > -1;
         if (has) {
-            txt += string.format('<br /><br />[Shift + Click] to revoke for {0} gold',
+            txt += string.format('<br /><br />按 [Shift + Click] 去撤销 {0} 黄金',
                 utilities.prettify(this.actor.getImprSellPrice(impr), '&nbsp;'));
         }
 
@@ -4971,7 +4971,7 @@
             num = num.toFixed(1);
         }
         return txt.replace('[chop]', utilities.prettify(num, '&nbsp;') + ' ' +
-                 (num <= 1 ? 'tree' : 'trees'));
+                 (num <= 1 ? '树' : '树'));
     };
 
     game.ScreenComponent.prototype.formatDescriptionYields = function (worker, txt) {
@@ -4982,7 +4982,7 @@
             num = num.toFixed(1);
         }
         return txt.replace('[yields]', utilities.prettify(num, '&nbsp;') + ' ' +
-                 (num <= 1 ? 'tree' : 'trees'));
+                 (num <= 1 ? '树' : '树'));
     };
 
     game.ScreenComponent.prototype.formatDescriptionGold = function (worker, txt) {
@@ -4992,7 +4992,7 @@
         } else if (num % 1 !== 0) {
             num = num.toFixed(1);
         }
-        return txt.replace('[yieldsGold]', utilities.prettify(num, '&nbsp;') + ' gold');
+        return txt.replace('[yieldsGold]', utilities.prettify(num, '&nbsp;') + ' 黄金');
     };
 
     game.ScreenComponent.prototype.formatTemperature = function (celsius, showPlus) {
