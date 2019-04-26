@@ -3254,38 +3254,38 @@
         }
 
         if (clicks === 1) {
-            this.screen.displayNews('info', '<span>The journey begins</span>!',
-                'You\'ve planted your first tree. You\'ll need a lot of trees. Plant another tree...');
+            this.screen.displayNews('info', '<span>旅程开始了</span>!',
+                '你种下了第一棵树。 你需要很多树。 种另一棵树...');
             return;
         }
 
         if (clicks === 2) {
-            this.screen.displayNews('info', '<span>The ultimate journey</span>!',
-                'Trees can help a lot to save humanity. Plant another tree...');
+            this.screen.displayNews('info', '<span>终极之旅</span>!',
+                '树木可以帮助拯救人类。 种另一棵树...');
             return;
         }
 
         if (clicks >= 3) {
             dom.get('.header-growing').style.display = 'block';
             if (clicks === 2) {
-                this.screen.displayNews('info', '<span>This is a planting journey</span>!',
-                    'The number of growing trees is visible at the top left of the screen. ' +
-                    'Continue to plant trees...');
+                this.screen.displayNews('info', '<span>这是种植之旅</span>!',
+                    '在屏幕的左上方可以看到生长树木的数量。 ' +
+                    '继续种植树木...');
                 return;
             }
         }
 
         if (clicks === 5) {
-            this.screen.displayNews('info', '<span>Trees need time to grow</span>!',
-                'Trees take one year to grow.');
+            this.screen.displayNews('info', '<span>树木需要时间来成长</span>!',
+                '树木需要一年的时间才能长大。');
             return;
         }
 
         if (clicks >= 10) {
             dom.get('.header-trees').style.display = 'block';
             if (clicks === 10) {
-                this.screen.displayNews('info', '<span>Grown trees</span>!',
-                    'The number of grown trees appear at the top center. Continue planting trees...');
+                this.screen.displayNews('info', '<span>种植树木</span>!',
+                    '成年树木的数量出现在顶部中心。 继续种植树木...');
                 return;
             }
         }
@@ -3293,8 +3293,8 @@
         if (clicks >= 20) {
             dom.get('.header-date').style.display = 'block';
             if (clicks === 20) {
-                this.screen.displayNews('info', '<span>Keep an eye on time</span>!',
-                    'The current date is visible at the top right of the screen.');
+                this.screen.displayNews('info', '<span>留意时间</span>!',
+                    '当前日期显示在屏幕的右上角。');
                 return;
             }
         }
@@ -3302,24 +3302,24 @@
         if (clicks >= 30) {
             dom.get('.header-level').style.display = 'block';
             if (clicks === 30) {
-                this.screen.displayNews('info', '<span>Get experience</span>!',
-                    'Each time you plant a tree, or use other actions, you gain experience. '+
-                    'Experience progress is visible at the top right of the screen.');
+                this.screen.displayNews('info', '<span>获得经验</span>!',
+                    '每次你种一棵树，或者做其他事情，你都会获得经验。 '+
+                    '经验进度是可见的，在屏幕的右上角。');
                 return;
             }
         }
 
         if (clicks === 40) {
-            this.screen.displayNews('info', '<span>Your mission: save the world [1/2]</span>!',
-                'Now that you\'re growing a forest, you need to save the world.');
+            this.screen.displayNews('info', '<span>你的任务：拯救世界 [1/2]</span>!',
+                '现在你正在种一片森林，你需要拯救世界。');
             return;
         }
 
         if (clicks >= 50) {
             dom.get('#stats-container').style.display = 'block';
             if (clicks === 50) {
-                this.screen.displayNews('info', '<span>Your mission: save the world [2/2]</span>!',
-                    'It\'s quite simple: keep the temperature anomaly between -6°C and +3.5°C. Otherwise, it\'s the end of Humanity - it\'s game over.');
+                this.screen.displayNews('info', '<span>你的任务:拯救世界 [2/2]</span>!',
+                    '很简单:将温度异常保持在-6°C到+3.5°C之间。否则，这就是人类的末日——游戏结束了。');
                 return;
             }
         }
@@ -3327,8 +3327,8 @@
         if (clicks >= 60) {
             dom.get('.header-gold').style.display = 'block';
             if (clicks === 60) {
-                this.screen.displayNews('info', '<span>How to save the world</span>?',
-                    'Now, we live in a capitalistic economy. You\'ll need money to save the world.');
+                this.screen.displayNews('info', '<span>如何拯救世界</span>?',
+                    '现在，我们生活在资本主义经济中。你需要钱来拯救世界。');
                 return;
             }
         }
@@ -3336,8 +3336,8 @@
         if (clicks >= 70) {
             dom.get('#chopTree').style.display = 'block';
             if (clicks === 70) {
-                this.screen.displayNews('info', '<span>Get gold</span>!',
-                    'To get gold, just click the big yellow button once some trees are grown, to chop them down and sell them for gold.');
+                this.screen.displayNews('info', '<span>得到金子</span>!',
+                    '要得到黄金，只要点击大黄色按钮，一旦一些树木生长，把他们砍下来，卖掉它们得到黄金。');
                 return;
             }
         }
@@ -3347,8 +3347,8 @@
             dom.get('#workers').style.display = 'block';
             dom.get('#workers-title').style.display = 'block';
             if (clicks === 80) {
-                this.screen.displayNews('info', '<span>Hire workers</span>!',
-                    'Once you have gold, you can hire workers, who will plant and chop trees for you.');
+                this.screen.displayNews('info', '<span>雇佣工人</span>!',
+                    '一旦你有了金子，你可以雇佣工人，他们会为你种植和砍伐树木。');
                 return;
             }
         }
@@ -3357,8 +3357,8 @@
             dom.get('#improvements').style.display = 'block';
             dom.get('#improvements-title').style.display = 'block';
             if (clicks === 90) {
-                this.screen.displayNews('info', '<span>Adopt policies</span>!',
-                    'You can also adopt policies, that will bring various kind of improvements.');
+                this.screen.displayNews('info', '<span>采取政策</span>!',
+                    '您还可以采用策略，这将带来各种各样的改进。');
                 return;
             }
         }
@@ -3366,16 +3366,16 @@
             dom.get('#research').style.display = 'block';
             dom.get('#research-title').style.display = 'block';
             if (clicks === 100) {
-                this.screen.displayNews('info', '<span>Science</span>!',
-                    'At last, you can spend money on research, in order to improve your workers productivity, or even escape the game.');
+                this.screen.displayNews('info', '<span>科学</span>!',
+                    '最后，你可以把钱花在研究上，以提高你的工人的生产力，甚至逃避游戏。');
                 return;
             }
         }
 
         if (clicks >= 110) {
             if (clicks === 110) {
-                this.screen.displayNews('info', '<span>Good luck</span>!',
-                    'You\'re on your own now. Thank you for saving the world!');
+                this.screen.displayNews('info', '<span>祝你好运</span>!',
+                    '你现在只能靠自己了。谢谢你拯救世界!');
             }
             this.state.set('initing', 0);
         }
@@ -3389,8 +3389,8 @@
         if (lp >= max) {
             s.decrement('levelProgress', max);
             s.increment('level');
-            this.screen.displayNews('info', '<span>Level up</span>!',
-                string.format('You reached level {0}. Way to go!', s.get('level')));
+            this.screen.displayNews('info', '<span>升级了</span>!',
+                string.format('你达到了等级 {0}. 做得好!', s.get('level')));
         }
     };
 
@@ -3452,14 +3452,14 @@
             s.increment('year');
 
             if (this.getActualPPMPerYear() > 0) {
-                title = 'Happy new year (sort of)';
-                sentence = 'It\'s {0} now, and CO2 concentration is still increasing. We need more trees!!';
+                title = '新年快乐 (sort of)';
+                sentence = '现在 {0} 年了, 二氧化碳浓度仍在增加。我们需要更多的树!';
             } else if (this.getActualPPMPerYear() === 0) {
-                title = 'Happy new year!';
-                sentence = 'We\'re in {0}, and CO2 concentration is no more increasing. Continue the good work, we need to reduce CO2 concentration!';
+                title = '新年快乐!';
+                sentence = '现在 {0} 年了, 二氧化碳浓度不再增加。继续做好工作，我们需要降低二氧化碳浓度!';
             } else {
-                title = 'Happy new year!';
-                sentence = 'We\'re in {0}, and CO2 concentration is decreasing. Keep up the good work!';
+                title = '新年快乐!';
+                sentence = '现在 {0} 年了, 二氧化碳浓度在下降。再接再厉!';
             }
             this.screen.displayNews('info', '<span>' + title + '</span>!',
                 string.format(sentence, s.get('year')));
@@ -4459,9 +4459,9 @@
         dom.get('#trees').textContent = utilities.prettify(Math.round(trees));
         //dom.get('#weeklyGrown').textContent = utilities.prettify(Math.round(treeGrowing[0] * this.actor.getAbsorptionAndGrowthMutiplier())) + '/week';
         dom.get('#growingTrees').textContent = utilities.prettify(Math.round(math.sum(s.get('growing'))));
-        dom.get('#increasePerTick').textContent = (ipc > 0 ? '+' : '') + utilities.prettify(ipc) + '/week';
+        dom.get('#increasePerTick').textContent = (ipc > 0 ? '+' : '') + utilities.prettify(ipc) + '/周';
         dom.get('#gold').textContent = utilities.prettify(Math.round(s.get('gold')));
-        dom.get('#increaseGoldPerTick').textContent = (igpc > 0 ? '+' : '') + utilities.prettify(igpc) + '/week';
+        dom.get('#increaseGoldPerTick').textContent = (igpc > 0 ? '+' : '') + utilities.prettify(igpc) + '/周';
 
         dom.get('#metricTons').textContent = utilities.prettify(Math.max(totalCO2MetricTons, 0));
         if (tonsDiff >= 0) {
@@ -4748,7 +4748,7 @@
             return;
         }
 
-        dom.get('.title', li).innerHTML = this.getImprovementTitle(impr);
+        dom.get('.title', li).innerHTML = cnItem(this.getImprovementTitle(impr));
 
         price = this.actor.getImprPrice(impr);
 
@@ -4902,9 +4902,9 @@
             desc.innerHTML = '';
         }
         if (needLevelUp) {
-            desc.innerHTML += 'Available at level ' + workerOrImprOrText.level + '.';
+            desc.innerHTML += '级别可用 ' + workerOrImprOrText.level + '.';
         } else if (typeof workerOrImprOrText === 'object' && workerOrImprOrText.price > this.state.get('gold') && !bought) {
-            desc.innerHTML += '<br /><br />Not enough gold!';
+            desc.innerHTML += '<br /><br />没有足够的黄金!';
         }
 
         tt.style.left = pos.left + 'px';
@@ -5153,9 +5153,9 @@
         }.bind(this), 1);
 
         if (this.state.has('Eco dome') && this.state.get('ppm') > 500) {
-            dom.get('#win-message').textContent = 'You safely eat popcorn in your Eco dome, while outside the world is burning. Thousands of climate migrants beg the entrance but you won\'t let them in. They fucked up Earth, isn\'t it?';
+            dom.get('#win-message').textContent = '当外面的世界在燃烧的时候，你可以安全地在你的生态穹顶里吃爆米花。成千上万的气候移民乞求进入，但你不会让他们进来。他们把地球搞砸了，不是吗?';
         } else if (this.state.has('Eco dome') && this.state.get('tp') < 280) {
-            dom.get('#win-message').textContent = 'What a time to be alive! It\'s snowing outside the Eco dome. Humanity is freezing, but no worry, you and your rich friends are safe. Well done.';
+            dom.get('#win-message').textContent = '多么美好的时光啊!生态圆顶外面正在下雪。人性是冰冷的，但别担心，你和你的有钱朋友们是安全的。做得很好。';
         }
     };
 
@@ -5219,19 +5219,19 @@
         unique: true,
         key: 'totalTrees',
         value: 5,
-        desc: 'You\'ve grown 5 trees! That\'s a very good start old chap!'
+        desc: '你已经种了5棵树了!这是一个很好的开始，老伙计!'
     }, {
         name: 'Planter',
         unique: true,
         key: 'totalTrees',
         value: 100,
-        desc: 'You\'ve grown 100 trees. Well done!'
+        desc: '你已经种了100棵树。做得好!'
     }, {
         name: 'Master Planter',
         unique: true,
         key: 'totalTrees',
         value: 1000,
-        desc: 'You\'ve grown 1000 trees! We\'re getting serious...'
+        desc: '你已经种了1000棵树!我们是认真的...'
     },
 
 

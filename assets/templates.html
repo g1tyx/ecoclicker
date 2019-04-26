@@ -1,30 +1,208 @@
 <script type="text/html" id="tpl-credits"></script>
-<script type="text/html" id="tpl-game-over-high"><ul class="menu"><li><h1>Game Over</h1></li><li><p>Looks like you grilled us to death. Thank you for playing!</p></li><li><p>Remember: Earth won't die. Humans will.<br>Please be reasonable for our children! Eat less meat, take public transportation when possible, don't buy what you don't need.<br><br>Plant a seed.</p></li><li><button class="button green" id="new-game-btn-from-over">New game</button></li><li><button class="button" id="main-btn">Main menu</button></li></ul></script>
-<script type="text/html" id="tpl-game-over-low"><ul class="menu"><li><h1>Game Over</h1></li><li><p>Well done for stopping global warming! But you freezed us to death. No one wants a new ice age!</p></li><li><p>Try again!</p></li><li><button class="button green" id="new-game-btn-from-over">New game</button></li><li><button class="button" id="main-btn">Main menu</button></li></ul></script>
-<script type="text/html" id="tpl-game"><header><ul><li class="header-title"><h1>EcoClicker</h1><span class="version">0.5.1</span></li><li class="header-level"><span class="value" id="level"></span> <span class="progress"><span id="levelProgressBar"></span></span> <span class="increase"><span id="levelProgress"></span><span>/</span><span id="maxLevelProgress"></span></span><br></li><li class="header-growing"><span class="icon seed"></span> <span class="value" id="growingTrees">0</span> <span class="increase" id="increasePerTick"></span></li><li class="header-trees"><span class="icon forester"></span> <span class="value" id="trees">0</span></li><li class="header-gold"><span class="icon gold"></span> <span class="value" id="gold">0</span> <span class="increase" id="increaseGoldPerTick"></span></li><li class="header-date"><span class="value" id="date">01/2095</span></li><li class="header-pause"><button id="pause"><span class="icon pause"></span></button></li></ul></header><div id="scene"></div><div id="toolbar"><div id="stats-container"><div><table><thead><tr><th>Temperature</th><th>Earth average</th><th>Anomaly</th></tr></thead><tbody><tr><td></td><td class="value"><span id="actualAverageTemperature"></span></td><td class="value large"><span id="anomalyTemperature"></span></td></tr></tbody><thead><tr><th>CO2</th><th>Metric tons/week</th><th>PPM/year</th></tr></thead><tbody><tr><td>Emitted (Pollution)</td><td class="value"><span id="ppmTonsPerWeek"></span></td><td class="value"><span id="ppmIncreasePerYear"></span></td></tr><tr><td>Absorbed (Your forest)</td><td class="value"><span id="absorptionPerWeek"></span></td><td class="value"><span id="ppmAbsorptionPerYear"></span></td></tr><tr><td>Difference</td><td class="value"><span id="tonsDiff"></span></td><td class="value"><span id="ppmDiff"></span></td></tr></tbody><thead><tr><th></th><th>总计 二氧化碳 (Metric tons)</th><th>Total CO2 (PPM)</th></tr></thead><tbody><tr><td></td><td class="value"><span id="metricTons"></span></td><td class="value large"><span id="ppm"></span></td></tr></tbody></table></div></div><button id="plantTree">种一棵树<br><span id="click-plant-multiplier">x1</span></button> <button id="chopTree">砍一棵树<br><span id="click-chop-multiplier">x1</span></button><div id="news-container"><ul id="news"></ul></div></div><div class="bottom"><div><h3 id="workers-title">工人</h3><ul id="workers"></ul></div><div><h3 id="improvements-title">政策</h3><ul id="improvements"></ul></div><div><h3 id="research-title">研究</h3><ul id="research"></ul></div></div></script>
-<script type="text/html" id="tpl-in-game-pause"><ul class="menu"><li><button class="button green" id="pause-play-btn">返回游戏</button></li><!--
+<script type="text/html" id="tpl-game-over-high">
+    <ul class="menu">
+        <li>
+            <h1>游戏结束</h1>
+        </li>
+        <li>
+            <p>看来你把我们烤死了。谢谢你的参与!</p>
+        </li>
+        <li>
+            <p>记住:地球不会死。人类会。<br>请为我们的孩子讲道理!少吃肉，尽可能乘坐公共交通工具，不要买不需要的东西。<br><br>种一粒种子。</p>
+        </li>
+        <li><button class="button green" id="new-game-btn-from-over">新游戏</button></li>
+        <li><button class="button" id="main-btn">主菜单</button></li>
+    </ul>
+
+</script>
+<script type="text/html" id="tpl-game-over-low">
+    <ul class="menu">
+        <li>
+            <h1>游戏结束</h1>
+        </li>
+        <li>
+            <p>干得好，阻止了全球变暖!但是你把我们冻死了。没有人想要一个新的冰河时代!</p>
+        </li>
+        <li>
+            <p>再次尝试!</p>
+        </li>
+        <li><button class="button green" id="new-game-btn-from-over">新游戏</button></li>
+        <li><button class="button" id="main-btn">主菜单</button></li>
+    </ul>
+
+</script>
+<script type="text/html" id="tpl-game">
+    <header>
+        <ul>
+            <li class="header-title">
+                <h1>环保点击</h1><span class="version">0.5.1</span>
+            </li>
+            <li class="header-level"><span class="value" id="level"></span> <span class="progress"><span id="levelProgressBar"></span></span> <span class="increase"><span id="levelProgress"></span><span>/</span><span id="maxLevelProgress"></span></span><br></li>
+            <li class="header-growing"><span class="icon seed"></span> <span class="value" id="growingTrees">0</span> <span class="increase" id="increasePerTick"></span></li>
+            <li class="header-trees"><span class="icon forester"></span> <span class="value" id="trees">0</span></li>
+            <li class="header-gold"><span class="icon gold"></span> <span class="value" id="gold">0</span> <span class="increase" id="increaseGoldPerTick"></span></li>
+            <li class="header-date"><span class="value" id="date">01/2095</span></li>
+            <li class="header-pause"><button id="pause"><span class="icon pause"></span></button></li>
+        </ul>
+    </header>
+    <div id="scene"></div>
+    <div id="toolbar">
+        <div id="stats-container">
+            <div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>温度</th>
+                            <th>地球平均</th>
+                            <th>异常</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td></td>
+                            <td class="value"><span id="actualAverageTemperature"></span></td>
+                            <td class="value large"><span id="anomalyTemperature"></span></td>
+                        </tr>
+                    </tbody>
+                    <thead>
+                        <tr>
+                            <th>二氧化碳</th>
+                            <th>公吨/周</th>
+                            <th>PPM/年</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>排放 (污染)</td>
+                            <td class="value"><span id="ppmTonsPerWeek"></span></td>
+                            <td class="value"><span id="ppmIncreasePerYear"></span></td>
+                        </tr>
+                        <tr>
+                            <td>吸收 (你的森林)</td>
+                            <td class="value"><span id="absorptionPerWeek"></span></td>
+                            <td class="value"><span id="ppmAbsorptionPerYear"></span></td>
+                        </tr>
+                        <tr>
+                            <td>区别</td>
+                            <td class="value"><span id="tonsDiff"></span></td>
+                            <td class="value"><span id="ppmDiff"></span></td>
+                        </tr>
+                    </tbody>
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>总计 二氧化碳 (公吨)</th>
+                            <th>总计 二氧化碳 (PPM)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td></td>
+                            <td class="value"><span id="metricTons"></span></td>
+                            <td class="value large"><span id="ppm"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div><button id="plantTree">种一棵树<br><span id="click-plant-multiplier">x1</span></button> <button id="chopTree">砍一棵树<br><span id="click-chop-multiplier">x1</span></button>
+        <div id="news-container">
+            <ul id="news"></ul>
+        </div>
+    </div>
+    <div class="bottom">
+        <div>
+            <h3 id="workers-title">工人</h3>
+            <ul id="workers"></ul>
+        </div>
+        <div>
+            <h3 id="improvements-title">政策</h3>
+            <ul id="improvements"></ul>
+        </div>
+        <div>
+            <h3 id="research-title">研究</h3>
+            <ul id="research"></ul>
+        </div>
+    </div>
+
+</script>
+<script type="text/html" id="tpl-in-game-pause">
+    <ul class="menu">
+        <li><button class="button green" id="pause-play-btn">返回游戏</button></li>
+        <!--
     <li>
         <button class="button" id="save-btn">
             Save game
         </button>
     </li>
-    --><li><button class="button" id="main-btn">主菜单</button></li></ul></script>
-<script type="text/html" id="tpl-in-game-save"><ul class="menu"><li><h1>保存游戏</h1><p>选择现有已保存的游戏或创建新游戏。</p></li><li><ul class="selection"></ul></li><li><label>新游戏</label><input type="text" id="new-game-input"></li><li><button class="button" id="main-btn">主菜单</button></li></ul></script>
-<script type="text/html" id="tpl-main"><ul class="menu"><li><h1>环保点击</h1><h5>Alpha v0.5.1</h5></li><li><p id="facts"></p></li><li id="continue-game"><button class="button" id="continue-game-btn" style="display: none">继续游戏</button></li><li><button class="button" id="new-game-btn" style="display: none">新游戏</button></li><!--
+    -->
+        <li><button class="button" id="main-btn">主菜单</button></li>
+    </ul>
+
+</script>
+<script type="text/html" id="tpl-in-game-save">
+    <ul class="menu">
+        <li>
+            <h1>保存游戏</h1>
+            <p>选择现有已保存的游戏或创建新游戏。</p>
+        </li>
+        <li>
+            <ul class="selection"></ul>
+        </li>
+        <li><label>新游戏</label><input type="text" id="new-game-input"></li>
+        <li><button class="button" id="main-btn">主菜单</button></li>
+    </ul>
+
+</script>
+<script type="text/html" id="tpl-main">
+    <ul class="menu">
+        <li>
+            <h1>环保点击</h1>
+            <h5>Alpha v0.5.1</h5>
+        </li>
+        <li>
+            <p id="facts"></p>
+        </li>
+        <li id="continue-game"><button class="button" id="continue-game-btn" style="display: none">继续游戏</button></li>
+        <li><button class="button" id="new-game-btn" style="display: none">新游戏</button></li>
+        <!--
     <li>
         <button class="button" id="load-btn">
             Load game
         </button>
-    </li>--> <!--
+    </li>-->
+        <!--
     <li>
         <button class="button" id="settings-btn">
             Settings
         </button>
-    </li>--><!--
+    </li>-->
+        <!--
     <li>
         <button class="button" id="credits-btn">
             Credits
         </button>
-    </li>--></ul></script>
-<script type="text/html" id="tpl-settings"><ul class="menu"><li><h1>设置</h1></li><li><input type="checkbox" id="use-fahrenheit"><label for="use-fahrenheit">使用华氏温标显示温度</label></li><li><button class="button" id="go-back-btn">同意并返回</button></li></ul></script>
-<script type="text/html" id="tpl-win"><ul class="menu"><li><h1你胜利了!</h1></li><li><p id="win-message"></p></li><li><button class="button green" id="new-game-btn-from-over">新游戏</button></li><li><button class="button" id="main-btn">主菜单</button></li></ul></script>
+    </li>-->
+    </ul>
+
+</script>
+<script type="text/html" id="tpl-settings">
+    <ul class="menu">
+        <li>
+            <h1>设置</h1>
+        </li>
+        <li><input type="checkbox" id="use-fahrenheit"><label for="use-fahrenheit">使用华氏温标显示温度</label></li>
+        <li><button class="button" id="go-back-btn">同意并返回</button></li>
+    </ul>
+
+</script>
+<script type="text/html" id="tpl-win">
+    <ul class="menu">
+        <li>
+            <h1你胜利了!</h1> </li> <li>
+                <p id="win-message"></p>
+        </li>
+        <li><button class="button green" id="new-game-btn-from-over">新游戏</button></li>
+        <li><button class="button" id="main-btn">主菜单</button></li>
+    </ul>
+
+</script>
