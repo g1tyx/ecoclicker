@@ -4579,7 +4579,7 @@
         });
         title = dom.create('span', {
             'class': 'title',
-            innerHTML: worker.name
+            innerHTML: cnItem(worker.name)
         });
         num = dom.create('span', {
             'class': 'num',
