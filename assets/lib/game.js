@@ -1,3 +1,28 @@
+/*global bloom, requestAnimationFrame*/
+(function () {
+    'use strict';
+
+    var core = bloom.ns('core');
+
+    function define(key, value, writable) {
+        Object.defineProperty(core, key, {
+          value: value,
+          writable: !!writable
+        });
+    }
+
+    /**
+     * Instances of Game to update in loop.js
+     */
+    define('instances', [], false);
+
+    /**
+     *
+     */
+    define('fps', 40, true);
+
+}());
+
 (function() {
 
     var binding = bloom.ns('binding'),
@@ -168,6 +193,12 @@
     };
     core.Component.prototype.actor = null;
     core.Component.prototype.state = null;
+
+    core.Component.prototype.setProperty = function (key, value) {
+        this[key] = value;
+        return this;
+    };
+
     core.Component.prototype.getLayer = function () {
         if (this.actor) {
             return this.actor.layer;
@@ -181,17 +212,36 @@
         return null;
     };
     core.Component.prototype.get = core.Component.prototype.getComponent;
-    core.Component.prototype.getActor = function () {
+
+    core.Component.prototype.getEntity = function () {
         return this.actor;
     };
+
+    core.Component.prototype.getActor = function () {
+        core.warn('Component.getActor() is deprecated. You should use Component.getEntity().');
+        return this.actor;
+    };
+
     core.Component.prototype.getLayer = function () {
+        if (!this.actor) {
+            return null;
+        }
+
         return this.actor.layer;
     };
+
     core.Component.prototype.getScene = function () {
         return this.actor.layer.scene;
     };
+
     core.Component.prototype.getGame = function () {
         return this.actor.layer.scene.game;
+    };
+
+    core.Component.prototype.remove = function () {
+        if (this.actor) {
+            this.actor.requireRemoval(this);
+        }
     };
 }());
 
@@ -277,9 +327,32 @@
     core.Entity.prototype.markForRemoval = function() {
         this.layer.markForRemoval(this);
     };
+
     core.Entity.prototype.removeFromLayer = function() {
-        if (this.layer) {
+        if (this.layer) {
             this.layer.remove(this);
+        }
+    };
+
+    core.Entity.prototype.removeAll = function(constructor) {
+        var cs = this.components,
+            l = cs.length;
+
+        for (i = cs.length - 1; i >= 0; i -= 1) {
+            if (cs[i] instanceof constructor) {
+                this.remove(cs[i]);
+            }
+        }
+    };
+
+    core.Entity.prototype.requireRemoval = function(constructor) {
+        var cs = this.components,
+            l = cs.length;
+
+        for (i = cs.length - 1; i >= 0; i -= 1) {
+            if (cs[i] instanceof constructor) {
+                this.remove(cs[i]);
+            }
         }
     };
 
@@ -287,6 +360,7 @@
         if (!component) {
             return;
         }
+
         var cs = this.components,
             i = cs.indexOf(component);
         if (i > -1) {
@@ -296,6 +370,7 @@
         component.actor = null;
         this.layer.unregisterComponent(component);
     };
+
 }());
 
 
@@ -307,7 +382,6 @@
         dom = bloom.ns('utilities.dom'),
         string = bloom.ns('utilities.string');
 
-    core.instances = [];
 
     /**
      * A game is a holder for the scenes. It allows to
@@ -321,6 +395,7 @@
         this.scenesById = {};
         this.loader = null;
         this.manifest = null;
+        this.state = new core.State();
         this.paused = false;
         this.ts = 0;
         core.instances.push(this);
@@ -365,6 +440,7 @@
         if (!this.scenes.length) {
             throw new Error('No scene to start with!');
         }
+
         if (this.current === null) {
             this.goto(id || 'main');
         }
@@ -378,8 +454,9 @@
         } else {
             dom.get('#wrapper').innerHTML = '';
         }
+
         if (!this.scenesById.hasOwnProperty(id)) {
-            console.warn('Scene not found: "' + id + '"');
+            core.warn('Scene not found: "' + id + '"');
             return;
         }
 
@@ -408,6 +485,7 @@
             this.pause();
         }
     };
+
     core.Game.prototype.update = function (time, delta) {
         this.delta = time - this.ts;
         this.ts = time;
@@ -418,6 +496,7 @@
             this.current.update(time, this.delta);
         }
     };
+
     core.Game.prototype.add = function(scene) {
         if (!(scene instanceof core.Scene)) {
             throw new Error('Given scene must be a bloom.core.Scene instance');
@@ -510,6 +589,12 @@
     core.Layer.prototype.create = function(opts) {
         return this.add(core.Entity, opts);
     };
+    core.Layer.prototype.addToAll = function(entities, component) {
+        entities.forEach((function (entity) {
+            entity.add(component);
+        }).bind(this));
+    };
+
     core.Layer.prototype.add = function(actor, opts) {
 
         if (typeof actor === 'function') {
@@ -614,20 +699,22 @@
             this.removeComponent(actor);
             return;
         } else if (typeof actor === 'function') {
-            actor = this.getActor(actor);
+            actor = this.get(actor);
         }
 
         var os = this.actors,
             us = this.updatable,
             i;
 
-        if (typeof actor.end === 'function') {
-            actor.end();
+        if (!!actor) {
+            if (typeof actor.end === 'function') {
+                actor.end();
+            }
+
+            this.unregisterComponentOf(actor);
+
+            actor.layer = null;
         }
-
-        this.unregisterComponentOf(actor);
-
-        actor.layer = null;
 
         i = os.indexOf(actor);
         if (i > -1) {
@@ -642,6 +729,11 @@
     };
 
     core.Layer.prototype.getActor = function(constructorOrId) {
+        core.warn('core.Layer.getActor() is deprecated. You should use core.Layer.getEntity().');
+        return this.getEntity(constructorOrId);
+    };
+
+    core.Layer.prototype.getEntity = function(constructorOrId) {
         if (typeof constructorOrId === 'string') {
             return this.actorsById.hasOwnProperty(constructorOrId) ?
                     this.actorsById[constructorOrId] : null;
@@ -651,13 +743,13 @@
             i,
             l = as.length;
         for (i = 0; i < l; i += 1) {
-            if (as[i] instanceof constructor) {
+            if (as[i] instanceof constructorOrId) {
                 return as[i];
             }
         }
         return null;
     };
-    core.Layer.prototype.get = core.Layer.prototype.getActor;
+    core.Layer.prototype.get = core.Layer.prototype.getEntity;
 
     core.Layer.prototype.getComponents = function(constructor, excludingFor) {
         var as = this.actors,
@@ -676,7 +768,13 @@
         }
         return result;
     };
+
     core.Layer.prototype.getActors = function(constructor) {
+        core.warn('core.Layer.getActors() is deprecated. You should use core.Layer.getEntities().');
+        return this.getEntities(constructor);
+    };
+
+    core.Layer.prototype.getEntities = function(constructor) {
         var as = this.actors,
             result = [],
             c,
@@ -690,6 +788,23 @@
         }
         return result;
     };
+
+
+    core.Layer.prototype.getEntitiesByComponent = function(constructor) {
+        var as = this.actors,
+            result = [],
+            c,
+            i,
+            l = as.length;
+
+        for (i = 0; i < l; i += 1) {
+            if (as[i].get(constructor) !== null) {
+                result.push(as[i]);
+            }
+        }
+        return result;
+    };
+
     core.Layer.prototype.addComponent = function(component) {
         if (!this.dummy) {
             this.dummy = new core.Entity();
@@ -797,7 +912,8 @@
             ls[i].update(time, delta);
         }
     };
-    core.Scene.prototype.fixedUpdate = function () {
+
+    core.Scene.prototype.fixedUpdate = function (time, delta) {
         var ls = this.layers, i, l = ls.length;
         for (i = 0; i < l; i += 1) {
             ls[i].fixedUpdate();
@@ -824,6 +940,10 @@
         }
     };
     core.Scene.prototype.remove = function(layer) {
+        if (arguments.length === 0) {
+            layer = this.layer;
+        }
+
         if (!(layer instanceof core.Layer)) {
             throw new Error('Given layer must be a bloom.core.Layer instance');
         }
@@ -856,18 +976,23 @@
 (function() {
     var core = bloom.ns('core'),
         dom = bloom.require('utilities.dom');
+
     core.SpriteAtlas = function(opts, data) {
         this.id = opts && opts.hasOwnProperty('id') ? opts.id : null;
         this.image = null;
         this.imageDatas = {};
         this.images = {};
-        if (opts && opts.hasOwnProperty('data')) {
+        this.definition = {};
+
+        if (opts && opts.hasOwnProperty('loader')) {
+            this.image = opts.loader.response;
+            this.definition = opts.loader.atlas.definition;
+        } else if (opts && opts.hasOwnProperty('data')) {
             this.image = opts.data;
-        }
-        if (opts && opts.hasOwnProperty('definition')) {
-           this.definition = opts.definition;
-        } else {
-            this.definition = {};
+
+            if (opts && opts.hasOwnProperty('definition')) {
+               this.definition = opts.definition;
+            }
         }
         this.generate();
     };
@@ -880,8 +1005,6 @@
 
         this.ctx = this.canvas.getContext('2d');
         this.ctx.drawImage(this.image, 0, 0);
-
-        document.body.appendChild(this.canvas);
     };
 
     core.SpriteAtlas.prototype.generateImageData = function(id) {
@@ -892,10 +1015,25 @@
             console.warn('No definition for atlas tile "' + id + '" [Atlas#' + this.id + ']');
             return;
         }
-        var def = this.definition[id];
+        var def = this.definition[id],
+            // Where do this come from?? :O
+            mapElement = dom.get('#map');
+
         this.imageDatas[id] = this.ctx.getImageData(def[0], def[1], def[2], def[3]);
-        dom.get('#map').getContext('2d').putImageData(this.imageDatas[id], 20, 20);
+
+        if (mapElement) {
+            mapElement.getContext('2d').putImageData(this.imageDatas[id], 20, 20);
+        }
     };
+
+    core.SpriteAtlas.prototype.getImageData = function(id) {
+        if (!this.imageDatas.hasOwnProperty(id)) {
+            this.generateImageData(id);
+        }
+
+        return this.imageDatas[id];
+    };
+
     core.SpriteAtlas.prototype.getImage = function(id) {
         if (this.images.hasOwnProperty(id)) {
             return this.images[id];
@@ -914,14 +1052,16 @@
         this.images[id] = img;
         return img;
     };
+
     core.SpriteAtlas.prototype.getImageData = function(id) {
         if (!this.imageDatas.hasOwnProperty(id)) {
             this.generateImageData(id);
         }
-        return this.imageDatas[id] || null;
+        return this.imageDatas[id] || null;
     };
 
 }());
+
 
 
 (function() {
@@ -1098,6 +1238,9 @@
         tween = bloom.ns('tween'),
         core = bloom.ns('core'),
 
+        // Game instances to update
+        // Initialized in _init.js
+        // Populated in core.Game
         instances = core.instances,
         i,
         l,
@@ -1106,8 +1249,7 @@
         ts = 0,
         tweener,
 
-        fps = 40,
-        interval = 1000 / fps;
+        interval = 1000 / core.fps;
 
     loop.animate = function (time) {
 
@@ -1116,12 +1258,6 @@
         delta = time - ts;
 
         if (delta > interval) {
-            // if (capped > 0 && cap > 0) {
-            //     cap -= 1;
-            //     return;
-            // }
-            // cap = capped;
-
             ts = time - (delta % interval);
 
             if (!tweener) {
@@ -1131,10 +1267,14 @@
             }
 
             for (i = 0, l = instances.length; i < l; i += 1) {
-                instances[i].update(ts);
+                instances[i].update(ts, delta);
             }
 
         }
+    };
+
+    loop.setFPS = function(fps) {
+        interval = 1000 / fps;
     };
 
     loop.animate(0);
@@ -1180,7 +1320,7 @@
             224: 'meta'
         },
         shift = false,
-        keys = [],
+        keys = [],
 
         nextNormalCode = null,
         whichToCode = {};
@@ -1334,7 +1474,7 @@
         this.velocity = opts && opts.hasOwnProperty('velocity') ? opts.velocity : null;
         this.delay = opts && opts.hasOwnProperty('delay') ? opts.delay : 0;
         this.opacity = 1;
-        this.mass = opts && opts.hasOwnProperty('mass') ? opts.mass : 1.5;
+        this.mass = opts && opts.hasOwnProperty('mass') ? opts.mass : 1;
         this.disappear = opts && opts.hasOwnProperty('disappear') ? opts.disappear : -1;
         this.start();
     };
@@ -1344,6 +1484,10 @@
     particles.Particle.prototype.update = function () {
     };
     particles.Particle.prototype.end = function () {
+    };
+
+    particles.Particle.prototype.die = function () {
+        this.lt = this.lifetime;
     };
 
     particles.Particle.prototype.pUpdate = function (system, delta, wind, gravity) {
@@ -1377,12 +1521,13 @@
                 this.opacity = 1 - (this.lt - disd) / dis;
             }
         }
-        p.add(wind)
-            .add(gravity);
+
+        p.add(wind.multiplyScalar(this.mass));
+        p.add(gravity);
 
         if (!!v) {
             p.add(v);
-            v.divideScalar(this.mass);
+            p.divideScalar(this.mass);
         }
 
         b = this.update();
@@ -1391,12 +1536,107 @@
 
     particles.Particle.prototype.pEnd = function () {
         this.end();
-        if (!!this.position) {
-            this.position = null;
-        }
+        this.lt = 0;
     };
 
 }());
+
+/*global bloom*/
+(function () {
+    'use strict';
+
+    var particles = bloom.ns('particles'),
+        math = bloom.ns('utilities.math'),
+        core = bloom.ns('core');
+
+    particles.Particle2 = function (opts) {
+        this.lt = 0;
+        this.lifetime = opts && opts.hasOwnProperty('lifetime') ? opts.lifetime : 1000;
+        this.delay = opts && opts.hasOwnProperty('delay') ? opts.delay : 0;
+
+        this.position = opts && opts.hasOwnProperty('position') ? opts.position : new core.Vector();
+        this.rotation = opts && opts.hasOwnProperty('rotation') ? opts.rotation : 0;
+        this.rot = 0;
+        this.angle = opts && opts.hasOwnProperty('angle') ? opts.angle : 0;
+        this.speed = opts && opts.hasOwnProperty('speed') ? opts.speed : 1;
+        this.velocity = new core.Vector();
+
+        this.setVelocity(this.angle, this.speed);
+
+        this.opacity = 1;
+        this.mass = opts && opts.hasOwnProperty('mass') ? opts.mass : 1;
+        this.disappear = opts && opts.hasOwnProperty('disappear') ? opts.disappear : -1;
+        this.start();
+    };
+
+    particles.Particle2.prototype.setVelocity = function (angle, speed) {
+        this.velocity.x = Math.cos(math.toRad(angle)) * speed;
+        this.velocity.y = -Math.sin(math.toRad(angle)) * speed;
+    };
+
+    particles.Particle2.prototype.start = function () {
+    };
+
+    particles.Particle2.prototype.update = function () {
+    };
+
+    particles.Particle2.prototype.end = function () {
+    };
+
+    particles.Particle2.prototype.die = function () {
+        this.lt = this.lifetime;
+    };
+
+    particles.Particle2.prototype.pUpdate = function (system, delta, wind, gravity) {
+        var p = this.position,
+            d = this.delay,
+            v = this.velocity,
+            r = this.rotation,
+            dis = this.disappear,
+            disd,
+            b;
+
+        if (d > 0) {
+            d -= delta;
+            this.delay = d;
+            if (d > 0) {
+                return true;
+            } else {
+                this.start();
+            }
+        }
+
+        this.lt += delta;
+        if (this.lt >= this.lifetime) {
+            return false;
+        }
+
+        this.rot += r;
+        if (dis > -1) {
+            disd = this.lifetime - dis;
+            if (this.lt > disd) {
+                this.opacity = 1 - (this.lt - disd) / dis;
+            }
+        }
+
+        if (!!v) {
+            p.add(v);
+        }
+
+        p.add({x: wind.x, y: wind.y, z: 0});
+        p.add({x: gravity.x * this.mass, y: gravity.y * this.mass, z: 0});
+
+        b = this.update();
+        return typeof b === 'boolean' ? b : true;
+    };
+
+    particles.Particle2.prototype.pEnd = function () {
+        this.end();
+        this.lt = 0;
+    };
+
+}());
+
 /*global bloom*/
 (function () {
     'use strict';
@@ -1463,9 +1703,11 @@
         core = bloom.ns('core');
 
     particles.System = function () {
-        this.gravity = new core.Vector(0, -1);
-        this.wind = new core.Vector();
+        this.gravity = new core.Vector(0, 0);
+        this.wind = new core.Vector(0, 0);
         this.particles = [];
+        this.log = false;
+        this._nextLog = -1;
     };
 
 
@@ -1477,20 +1719,32 @@
     };
 
     particles.System.prototype.update = function (time, delta) {
+        if (this._nextLog === -1) {
+            this._nextLog = time + 1000;
+        }
+
         var ps = this.particles,
             p,
             i,
             l = ps.length,
+            ended = [],
             currWind = this.wind.clone().multiplyScalar(delta / 10),
             currGravity = this.gravity.clone().multiplyScalar(delta / 10);
 
         for (i = l - 1; i >= 0; i -= 1) {
             p = ps[i];
-            if (!p.pUpdate(this, delta, currWind, currGravity)) {
+            if (!!p.pUpdate && !p.pUpdate(this, delta, currWind, currGravity)) {
                 p.pEnd();
-                ps.splice(i, 1);
+                ended.push(ps.splice(i, 1)[0]);
             }
         }
+
+        if (this.log && this._nextLog < time) {
+            this._nextLog = time + 1000;
+            core.log(time, 'Particle System', 'Total particles:', l, 'Killed:', ended.length);
+        }
+
+        return ended;
     };
     particles.System.prototype.end = function (p) {
         var ps = this.particles,
@@ -1503,6 +1757,7 @@
 
 
 }());
+
 
 
 (function() {
@@ -1584,25 +1839,27 @@
     sound.Sound = function(options) {
         bloom.EventDispatcher.call(this);
         this.id = options.id;
-        this.volume = options.volume || 1;
+        this.maxVolume = options.maxVolume || 1;
+        this.volume = options.volume || this.maxVolume;
         this.loop = !!options.loop;
         this.tween = null;
         this.element = dom.create('audio', {
             src: options.url
         });
-        console.log(this.loop, this.id);
+
         this.element.loop = this.loop;
         this.setVolume(this.volume);
 
-
         this.element.addEventListener('playing', function() {
-            console.log('Start playing', this.id);
+            this.dispatch({type: 'play', id: this.id});
         }.bind(this));
+
         this.element.addEventListener('pause', function() {
-            console.log('Stopped playing', this.id);
+            this.dispatch({type: 'stop', id: this.id});
         }.bind(this));
+
         this.element.addEventListener('suspend', function() {
-            console.log('Suspend', this.id);
+            this.dispatch({type: 'suspend', id: this.id});
         }.bind(this));
     };
 
@@ -1622,20 +1879,38 @@
         this.element.pause();
         this.rewind();
     };
-    sound.Sound.prototype.fadeIn = function() {
+    sound.Sound.prototype.fadeIn = function(time, cb) {
         this.element.play();
-        if (this.getVolume() < 1) {
+        var self = this;
+        this.tween = tween.tween({volume: 0}, {volume: this.maxVolume}, time || 1000, function(values) {
+            self.setVolume(values.volume);
 
-        }
-        this.tween = tween.get(this.getVolume(), 1)
+            if (values.volume === 1 && typeof cb === 'function') {
+                cb(self.id);
+            }
+        });
     };
-    sound.Sound.prototype.fadeOut = function() {
+    sound.Sound.prototype.fadeOut = function(time, cb) {
+        var self = this;
+        this.tween = tween.tween({volume: this.getVolume()}, {volume: 0}, time || 1000, function(values) {
+            self.setVolume(values.volume);
+            if (values.volume === 0) {
+                self.element.pause();
 
+                if (typeof cb === 'function') {
+                    cb(self.id);
+                }
+            }
+        });
     };
     sound.Sound.prototype.rewind = function() {
         this.element.currentTime = 0;
     };
     sound.Sound.prototype.setVolume = function(volume) {
+        if (volume > this.maxVolume) {
+            volume = this.maxVolume;
+        }
+
         this.volume = volume;
         this.element.volume = volume;
     };
@@ -1700,6 +1975,14 @@
         has: function(id) {
             return this.soundsById.hasOwnProperty(id);
         },
+        removeAll: function() {
+            var i = 0, ss = this.sounds, l = ss.length, sound;
+            for (i = 0; i < l; i += 1) {
+                this.store.release(ss[i].id, ss[i]);
+                ss[i].stop();
+            }
+            this.sounds = [];
+        },
         remove: function(id) {
             if (!this.soundsById.hasOwnProperty(id)) {
                 return;
@@ -1719,10 +2002,19 @@
             }
             delete this.soundsById[id];
         },
-        apply: function(method) {
-            var i = 0, ss = this.sounds, l = ss.length;
+        apply: function(method, arg, cb) {
+            var i = 0,
+                ss = this.sounds,
+                l = ss.length,
+                cbs = 0;
             for (i = 0; i < l; i += 1) {
-                ss[i][method]();
+                ss[i][method](arg, function() {
+                    cbs += 1;
+
+                    if (cbs === l && typeof cb === 'function') {
+                        cb();
+                    }
+                });
             }
         },
         play: function() {
@@ -1739,13 +2031,13 @@
             this.playing = false;
             this.apply('pause');
         },
-        fadeIn: function() {
-            this.play();
-            //this.apply('fadeIn');
+        fadeIn: function(time, cb) {
+            this.playing = true;
+            this.apply('fadeIn', time, cb);
         },
-        fadeOut: function() {
-            this.stop();
-            //this.apply('fadeOut');
+        fadeOut: function(time, cb) {
+            this.playing = false;
+            this.apply('fadeOut', time, cb);
         },
         rewind: function() {
             this.apply('rewind');
@@ -1830,7 +2122,6 @@
         },
         once: function(id) {
             var s = this.get(id);
-            console.log(s);
             s.play();
         }
     });
@@ -2157,6 +2448,7 @@
     tween.Tween.prototype.duration = 1000;
     tween.Tween.prototype.onEnd = null;
     tween.Tween.prototype.onUpdate = null;
+    tween.Tween.prototype.cancelled = false;
     tween.Tween.prototype.init = function (opts) {
         if (opts.hasOwnProperty('delay') && opts.delay !== undefined) {
             this.delay = opts.delay;
@@ -2210,7 +2502,15 @@
         this.update(0, 0, true);
     };
 
+    tween.Tween.prototype.cancel = function () {
+        this.cancelled = true;
+    };
+
     tween.Tween.prototype.update = function (time, delta, force) {
+        if (this.cancelled) {
+            return false;
+        }
+
         var starters = this.startValues,
             enders = this.endValues,
             object = this.result,
@@ -2265,6 +2565,7 @@
 
 
 }());
+
 /*global bloom*/
 (function () {
     'use strict';
@@ -2322,6 +2623,7 @@
     };
 
 }());
+
 (function () {
     var array = bloom.ns('utilities.array');
 
@@ -2381,6 +2683,10 @@
         d = document,
         b = d.body;
 
+
+    dom.byId = function(id) {
+        return document.getElementById(id);
+    };
 
     dom.all = function(selector, el) {
         return (el || b).querySelectorAll(selector);
@@ -2490,6 +2796,17 @@
     math.clamp = function(v, min, max) {
         return Math.min(Math.max(v, min), max);
     };
+
+    math.toColorHex = function(v) {
+        v = math.floor(v).toString(16);
+
+        return v.length === 1 ? '0' + v : v;
+    };
+
+    math.toRad = function(deg) {
+        return Math.PI * deg / 180;
+    };
+
 }());
 
 (function () {
@@ -2669,15 +2986,56 @@
         if (this.vy > this.ymax) { this.vy = this.ymax; }
         var c2d = this.get(core.Component2D);
 
-        if (c2d === null) {
-            return;
+        if (c2d !== null) {
+            c2d.x += this.vx;
+            c2d.y += this.vy;
         }
 
-        c2d.x += this.vx;
-        c2d.y += this.vy;
+        var bb = this.get(core.BoundingBox2D);
+
+        if (bb !== null) {
+            bb.x += this.vx;
+            bb.y += this.vy;
+        }
     }
 
 }());
+
+(function() {
+    'use strict';
+    var core = bloom.require('core'),
+        components = bloom.ns('core.components');
+
+    core.BoundingBox2D = function (opts) {
+        core.Component.apply(this, arguments);
+        this.x = opts && opts.hasOwnProperty('x') ? opts.x : 0;
+        this.y = opts && opts.hasOwnProperty('y') ? opts.y : 0;
+        this.width = opts && opts.hasOwnProperty('width') ? opts.width : 10;
+        this.height = opts && opts.hasOwnProperty('height') ? opts.height : 10;
+    }
+
+    bloom.inherits(core.BoundingBox2D, core.Component);
+
+
+    core.BoundingBox2D.prototype.intersect = function(bb) {
+        return this.x < bb.x + bb.width && this.x + this.width > bb.x &&
+            this.y < bb.y + bb.height && this.y + this.height > bb.y;
+    };
+
+    core.BoundingBox2D.prototype.overlap = function(bb) {
+        if (this.x > bb.x && this.x < bb.x + bb.width &&
+            this.y > bb.y && this.y < bb.y + bb.height) {
+            return true;
+        }
+        return false;
+    };
+
+
+    core.BoundingBox2D.prototype.toString = function() {
+        return this.nw.x + ',' + this.nw.y + ';' + this.se.x + ',' + this.se.y;
+    };
+}());
+
 (function() {
     'use strict';
     var core = bloom.require('core'),
@@ -2685,10 +3043,6 @@
 
     core.BoundingBox2DDisplay = function () {
         components.CanvasComponent.apply(this, arguments);
-
-        this.mx = 0;
-        this.w = 100;
-
     }
 
     bloom.inherits(core.BoundingBox2DDisplay, components.CanvasComponent);
@@ -2697,17 +3051,108 @@
         this.requireRedraw();
     };
     core.BoundingBox2DDisplay.prototype.draw = function(context) {
-        var bb = this.actor.getComponent(core.Component2D),
+        var c2d = this.actor.getComponent(core.Component2D),
+            bb = this.actor.getComponent(core.BoundingBox2D),
+            color = "rgba(20, 240, 20, 0.5)",
             a = this.actor;
 
-        if (!bb) {
+        if (!c2d && !bb) {
             return;
         }
 
-        context.fillStyle = "rgba(20, 240, 20, 0.5)";
-        context.fillRect(bb.x, bb.y, bb.width, bb.height);
+        if (!!bb) {
+            c2d = bb;
+            color = "rgba(240, 20, 20, 0.5)"
+        }
+
+        context.fillStyle = color;
+        context.fillRect(c2d.x, c2d.y, c2d.width, c2d.height);
     };
 }());
+
+(function() {
+    'use strict';
+    var core = bloom.ns('core'),
+        components = bloom.ns('core.components'),
+        dom = bloom.ns('utilities.dom');
+
+    components.GIFExporter = function (opts) {
+        core.Component.apply(this, arguments);
+
+        this.framerate = 50;
+        this.width = 600;
+        this.height = 300;
+        this.quality = 7;
+        this._time = 0;
+        this._canvasId = 'game';
+
+        this._domElement = null;
+        this._context = null;
+        this._gui = null;
+        this._encoder = null;
+        this._repeat = 0;
+        this._frames = [];
+
+        this._done = false;
+    }
+
+    bloom.inherits(components.GIFExporter, core.Component);
+
+    components.GIFExporter.prototype.start = function() {
+        this._done = false;
+        this._time = 0;
+        this._frames = [];
+
+        this._domElement = dom.byId(this._canvasId);
+        this._context = this._domElement.getContext('2d');
+        this._encoder = new GIFEncoder();
+        this._encoder.setRepeat(0);
+        this._encoder.setQuality(this.quality);
+        this._encoder.setDelay(Math.round(this.framerate));
+        this._encoder.setSize(this.width, this.height);
+        this._encoder.start();
+        this._frames.push(this._context.getImageData(0, 0, this.width, this.height).data);
+
+        if (!this._gui) {
+            this._gui = new dat.GUI();
+            this._gui.add(this, 'start');
+            this._gui.add(this, 'stop');
+        }
+    };
+
+    components.GIFExporter.prototype.update = function(time, delta) {
+        if (this._done) {
+            return;
+        }
+
+        this._time += delta;
+        if (this._time > this.framerate) {
+            this._frames.push(this._context.getImageData(0, 0, this.width, this.height).data);
+            this._time = 0;
+        }
+    };
+
+    components.GIFExporter.prototype.stop = function() {
+        this._time = 0;
+        this._done = true;
+
+        core.log('GIF Exporter: adding ' + this._frames.length + ' frames');
+
+        for (var i = 0, l = this._frames.length; i < l; i += 1) {
+            this._encoder.addFrame(this._frames[i], true);
+
+            if (i % 10 === 0) {
+                core.log('GIF Exporter: exported ' + i + ' frames');
+            }
+        }
+
+        this._encoder.finish();
+        this._encoder.download("download.gif");
+        this._frames = [];
+    };
+
+}());
+
 
 
 (function() {
@@ -2922,6 +3367,15 @@
         }
     };
 
+    core.Layer2D.prototype.requireRedrawAll = function() {
+        var a = this.actors,
+            l = a.length,
+            i;
+        for (i = 0; i < l; i += 1) {
+            a[i].requireRedraw();
+        }
+    };
+
     core.Layer2D.prototype.getCanvas = function() {
         return this.element;
     };
@@ -3077,7 +3531,7 @@
         tonByPPM = 2130000000,
         tonTreeAbsorptionPerYear = 0.0217728,
 
-        startYear = 2017,
+        startYear = 2019,
 
         game = bloom.require('game'),
         definitions = bloom.ns('game.definitions');
@@ -3143,7 +3597,7 @@
             s.set('improvements', []);
             s.set('month', 1);
             s.set('year', startYear);
-            s.set('ppm', 401);
+            s.set('ppm', 408);
             s.set('ppmIncrement', 2.1);
             s.set('absorbed', 0);
             
@@ -3174,7 +3628,7 @@
         this.bannedWorkers = [];
         this.refreshBannedWorkers();
         this.hideInitialScreen();
-        this.screen.displayNews('info', '欢迎来到 <span>环保点击</span>!', '点击 <span class="text-green">绿色大按钮</span> 去开始种树!');
+        this.screen.displayNews('info', 'Welcome to <span>EcoClicker</span>!', 'Click the <span class="text-green">big green button</span> to start planting trees!');
         this.screen.refresh();
         this.screen.addButtons();
         this.displayInitialMessage();
@@ -3254,38 +3708,38 @@
         }
 
         if (clicks === 1) {
-            this.screen.displayNews('info', '<span>旅程开始了</span>!',
-                '你种下了第一棵树。 你需要很多树。 种另一棵树...');
+            this.screen.displayNews('info', '<span>The journey begins</span>!',
+                'You\'ve planted your first tree. You\'ll need a lot of trees. Plant another tree...');
             return;
         }
 
         if (clicks === 2) {
-            this.screen.displayNews('info', '<span>终极之旅</span>!',
-                '树木可以帮助拯救人类。 种另一棵树...');
+            this.screen.displayNews('info', '<span>The ultimate journey</span>!',
+                'Trees can help a lot to save humanity. Plant another tree...');
             return;
         }
 
         if (clicks >= 3) {
             dom.get('.header-growing').style.display = 'block';
             if (clicks === 2) {
-                this.screen.displayNews('info', '<span>这是种植之旅</span>!',
-                    '在屏幕的左上方可以看到生长树木的数量。 ' +
-                    '继续种植树木...');
+                this.screen.displayNews('info', '<span>This is a planting journey</span>!',
+                    'The number of growing trees is visible at the top left of the screen. ' +
+                    'Continue to plant trees...');
                 return;
             }
         }
 
         if (clicks === 5) {
-            this.screen.displayNews('info', '<span>树木需要时间来成长</span>!',
-                '树木需要一年的时间才能长大。');
+            this.screen.displayNews('info', '<span>Trees need time to grow</span>!',
+                'Trees take one year to grow.');
             return;
         }
 
         if (clicks >= 10) {
             dom.get('.header-trees').style.display = 'block';
             if (clicks === 10) {
-                this.screen.displayNews('info', '<span>种植树木</span>!',
-                    '成年树木的数量出现在顶部中心。 继续种植树木...');
+                this.screen.displayNews('info', '<span>Grown trees</span>!',
+                    'The number of grown trees appear at the top center. Continue planting trees...');
                 return;
             }
         }
@@ -3293,8 +3747,8 @@
         if (clicks >= 20) {
             dom.get('.header-date').style.display = 'block';
             if (clicks === 20) {
-                this.screen.displayNews('info', '<span>留意时间</span>!',
-                    '当前日期显示在屏幕的右上角。');
+                this.screen.displayNews('info', '<span>Keep an eye on time</span>!',
+                    'The current date is visible at the top right of the screen.');
                 return;
             }
         }
@@ -3302,24 +3756,24 @@
         if (clicks >= 30) {
             dom.get('.header-level').style.display = 'block';
             if (clicks === 30) {
-                this.screen.displayNews('info', '<span>获得经验</span>!',
-                    '每次你种一棵树，或者做其他事情，你都会获得经验。 '+
-                    '经验进度是可见的，在屏幕的右上角。');
+                this.screen.displayNews('info', '<span>Get experience</span>!',
+                    'Each time you plant a tree, or use other actions, you gain experience. '+
+                    'Experience progress is visible at the top right of the screen.');
                 return;
             }
         }
 
         if (clicks === 40) {
-            this.screen.displayNews('info', '<span>你的任务：拯救世界 [1/2]</span>!',
-                '现在你正在种一片森林，你需要拯救世界。');
+            this.screen.displayNews('info', '<span>Your mission: save the world [1/2]</span>!',
+                'Now that you\'re growing a forest, you need to save the world.');
             return;
         }
 
         if (clicks >= 50) {
             dom.get('#stats-container').style.display = 'block';
             if (clicks === 50) {
-                this.screen.displayNews('info', '<span>你的任务:拯救世界 [2/2]</span>!',
-                    '很简单:将温度异常保持在-6°C到+3.5°C之间。否则，这就是人类的末日——游戏结束了。');
+                this.screen.displayNews('info', '<span>Your mission: save the world [2/2]</span>!',
+                    'It\'s quite simple: keep the temperature anomaly between -6°C and +3.5°C. Otherwise, it\'s the end of Humanity - it\'s game over.');
                 return;
             }
         }
@@ -3327,8 +3781,8 @@
         if (clicks >= 60) {
             dom.get('.header-gold').style.display = 'block';
             if (clicks === 60) {
-                this.screen.displayNews('info', '<span>如何拯救世界</span>?',
-                    '现在，我们生活在资本主义经济中。你需要钱来拯救世界。');
+                this.screen.displayNews('info', '<span>How to save the world</span>?',
+                    'Now, we live in a capitalistic economy. You\'ll need money to save the world.');
                 return;
             }
         }
@@ -3336,8 +3790,8 @@
         if (clicks >= 70) {
             dom.get('#chopTree').style.display = 'block';
             if (clicks === 70) {
-                this.screen.displayNews('info', '<span>得到金子</span>!',
-                    '要得到黄金，只要点击大黄色按钮，一旦一些树木生长，把他们砍下来，卖掉它们得到黄金。');
+                this.screen.displayNews('info', '<span>Get gold</span>!',
+                    'To get gold, just click the big yellow button once some trees are grown, to chop them down and sell them for gold.');
                 return;
             }
         }
@@ -3347,8 +3801,8 @@
             dom.get('#workers').style.display = 'block';
             dom.get('#workers-title').style.display = 'block';
             if (clicks === 80) {
-                this.screen.displayNews('info', '<span>雇佣工人</span>!',
-                    '一旦你有了金子，你可以雇佣工人，他们会为你种植和砍伐树木。');
+                this.screen.displayNews('info', '<span>Hire workers</span>!',
+                    'Once you have gold, you can hire workers, who will plant and chop trees for you.');
                 return;
             }
         }
@@ -3357,8 +3811,8 @@
             dom.get('#improvements').style.display = 'block';
             dom.get('#improvements-title').style.display = 'block';
             if (clicks === 90) {
-                this.screen.displayNews('info', '<span>采取政策</span>!',
-                    '您还可以采用策略，这将带来各种各样的改进。');
+                this.screen.displayNews('info', '<span>Adopt policies</span>!',
+                    'You can also adopt policies, that will bring various kind of improvements.');
                 return;
             }
         }
@@ -3366,16 +3820,16 @@
             dom.get('#research').style.display = 'block';
             dom.get('#research-title').style.display = 'block';
             if (clicks === 100) {
-                this.screen.displayNews('info', '<span>科学</span>!',
-                    '最后，你可以把钱花在研究上，以提高你的工人的生产力，甚至逃避游戏。');
+                this.screen.displayNews('info', '<span>Science</span>!',
+                    'At last, you can spend money on research, in order to improve your workers productivity, or even escape the game.');
                 return;
             }
         }
 
         if (clicks >= 110) {
             if (clicks === 110) {
-                this.screen.displayNews('info', '<span>祝你好运</span>!',
-                    '你现在只能靠自己了。谢谢你拯救世界!');
+                this.screen.displayNews('info', '<span>Good luck</span>!',
+                    'You\'re on your own now. Thank you for saving the world!');
             }
             this.state.set('initing', 0);
         }
@@ -3389,8 +3843,8 @@
         if (lp >= max) {
             s.decrement('levelProgress', max);
             s.increment('level');
-            this.screen.displayNews('info', '<span>升级了</span>!',
-                string.format('你达到了等级 {0}. 做得好!', s.get('level')));
+            this.screen.displayNews('info', '<span>Level up</span>!',
+                string.format('You reached level {0}. Way to go!', s.get('level')));
         }
     };
 
@@ -3452,14 +3906,14 @@
             s.increment('year');
 
             if (this.getActualPPMPerYear() > 0) {
-                title = '新年快乐 (排序)';
-                sentence = '现在 {0} 年了, 二氧化碳浓度仍在增加。我们需要更多的树!';
+                title = 'Happy new year (sort of)';
+                sentence = 'It\'s {0} now, and CO2 concentration is still increasing. We need more trees!!';
             } else if (this.getActualPPMPerYear() === 0) {
-                title = '新年快乐!';
-                sentence = '现在 {0} 年了, 二氧化碳浓度不再增加。继续做好工作，我们需要降低二氧化碳浓度!';
+                title = 'Happy new year!';
+                sentence = 'We\'re in {0}, and CO2 concentration is no more increasing. Continue the good work, we need to reduce CO2 concentration!';
             } else {
-                title = '新年快乐!';
-                sentence = '现在 {0} 年了, 二氧化碳浓度在下降。再接再厉!';
+                title = 'Happy new year!';
+                sentence = 'We\'re in {0}, and CO2 concentration is decreasing. Keep up the good work!';
             }
             this.screen.displayNews('info', '<span>' + title + '</span>!',
                 string.format(sentence, s.get('year')));
@@ -3487,7 +3941,7 @@
                     // s.increment('totalTrees', y);
                 }
                 if (w.chop > 0) {
-                    y = (w.chop || 0) * num * chopMultiplier;
+                    y = (w.chop || 0) * num * chopMultiplier;
                     if (s.get('trees') < y) {
                         y = s.get('trees');
                     }
@@ -3499,7 +3953,7 @@
                     }
                 }
                 if (w.yieldsGold > 0) {
-                    y = (w.yieldsGold || 0) * num * yieldsMutiplier;
+                    y = (w.yieldsGold || 0) * num * yieldsMutiplier;
                     if (y > 0) {
                         s.increment('gold', y);
                         s.increment('totalGold', y);
@@ -3557,7 +4011,7 @@
 
     game.EarthActor.prototype.chopTree = function (i) {
         var s = this.state;
-        i = (typeof i === 'number' ? i : 1) * this.getImprMultiplier('clickChop');
+        i = (typeof i === 'number' ? i : 1) * this.getImprMultiplier('clickChop');
         if (s.get('trees') >= i) {
             s.decrement('trees', i);
             s.increment('gold', i);
@@ -3704,17 +4158,17 @@
         for (i = 0; i < l; i += 1) {
             w = ws[i];
             if (!this.isWorkerBanned(w)) {
-                total += (w.yieldsGold || 0) * s.get(w.name, 0) * this.getImprMultiplier('yieldsGold');
-                total += (w.chop || 0) * s.get(w.name, 0) * this.getImprMultiplier('chop');
+                total += (w.yieldsGold || 0) * s.get(w.name, 0) * this.getImprMultiplier('yieldsGold');
+                total += (w.chop || 0) * s.get(w.name, 0) * this.getImprMultiplier('chop');
             }
         }
         for (i = 0, ws = definitions.improvements, l = ws.length; i < l; i += 1) {
             w = ws[i];
             if (ac.indexOf(w.name) > -1) {
-                total += (w.yields || 0);
+                total += (w.yields || 0);
             }
         }
-        if (total < 1000 && total > -1000) {
+        if (total < 1000 && total > -1000) {
             return Math.floor(total * 10) / 10;
         }
         return Math.floor(total);
@@ -3735,13 +4189,13 @@
             if (!this.isWorkerBanned(w)) {
                 num = s.get(w.name, 0);
                 planted += w.yields * num;
-                chopped += (w.chop || 0) * num;
+                chopped += (w.chop || 0) * num;
             }
         }
         planted *= this.getImprMultiplier('plant') * this.getAbsorptionAndGrowthMutiplier();
         chopped *= this.getImprMultiplier('chop');
         total = planted - chopped;
-        if (total < 1000 && total > -1000) {
+        if (total < 1000 && total > -1000) {
             return Math.floor(total * 10) / 10;
         }
         return Math.floor(total);
@@ -3781,7 +4235,7 @@
             is = definitions.improvements,
             i,
             l = is.length,
-            r = typeof baseMultiplier === 'number' ? baseMultiplier : 1,
+            r = typeof baseMultiplier === 'number' ? baseMultiplier : 1,
             tier,
             impr;
         for (i = 0; i < l; i += 1) {
@@ -3805,7 +4259,7 @@
             tier;
 
         if (impr.type === 'research') {
-            tier = this.state.get(impr.name) || 0;
+            tier = this.state.get(impr.name) || 0;
             price = price * Math.pow(tier + 1, 4);
         }
 
@@ -4066,7 +4520,7 @@
         tween.tween({opacity: 1}, {opacity: 0}, 200, function (o) {
             el.style.opacity = o.opacity;
             cs.style.opacity = o.opacity;
-            if (!!el2) {
+            if (!!el2) {
                 el2.style.opacity = o.opacity;
             }
         });
@@ -4138,7 +4592,7 @@
             lifetime: 2000,
             disappear: 1000,
             container: this.container,
-            content: '<span class="' + (type || 'trees') + '">' + (Math.floor(num * 10) / 10) + '</span>',
+            content: '<span class="' + (type || 'trees') + '">' + (Math.floor(num * 10) / 10) + '</span>',
             position: new core.Vector(math.random(0, this.w), 0),
             delay: math.random(0, 1000)
         });
@@ -4252,7 +4706,7 @@
             dom.get('#new-game-btn').style.display = 'block';
         }
 
-        dom.get('#facts').textContent = '随机爆料: ' + this.getFact();
+        dom.get('#facts').textContent = 'Random fact: ' + this.getFact();
     };
 
     game.MainScreenComponent.prototype.getFact = function () {
@@ -4459,9 +4913,9 @@
         dom.get('#trees').textContent = utilities.prettify(Math.round(trees));
         //dom.get('#weeklyGrown').textContent = utilities.prettify(Math.round(treeGrowing[0] * this.actor.getAbsorptionAndGrowthMutiplier())) + '/week';
         dom.get('#growingTrees').textContent = utilities.prettify(Math.round(math.sum(s.get('growing'))));
-        dom.get('#increasePerTick').textContent = (ipc > 0 ? '+' : '') + utilities.prettify(ipc) + '/周';
+        dom.get('#increasePerTick').textContent = (ipc > 0 ? '+' : '') + utilities.prettify(ipc) + '/week';
         dom.get('#gold').textContent = utilities.prettify(Math.round(s.get('gold')));
-        dom.get('#increaseGoldPerTick').textContent = (igpc > 0 ? '+' : '') + utilities.prettify(igpc) + '/周';
+        dom.get('#increaseGoldPerTick').textContent = (igpc > 0 ? '+' : '') + utilities.prettify(igpc) + '/week';
 
         dom.get('#metricTons').textContent = utilities.prettify(Math.max(totalCO2MetricTons, 0));
         if (tonsDiff >= 0) {
@@ -4579,7 +5033,7 @@
         });
         title = dom.create('span', {
             'class': 'title',
-            innerHTML: cnItem(worker.name)
+            innerHTML: worker.name
         });
         num = dom.create('span', {
             'class': 'num',
@@ -4728,7 +5182,7 @@
     };
     game.ScreenComponent.prototype.getImprovementTiers = function (impr) {
         if (impr.type === 'research') {
-            return '' + (this.state.get(impr.name) || 0) + '/' + impr.tiers;
+            return '' + (this.state.get(impr.name) || 0) + '/' + impr.tiers;
         }
         return '';
     };
@@ -4742,13 +5196,13 @@
             quantitySpan = dom.get('.quantity', li),
             bought = dom.get('.bought', li),
             hasBeenBought = s.get('improvements').indexOf(impr.name) > -1,
-            maxTierReached = impr.type === 'research' ? (s.get(impr.name) || 0) === impr.tiers : false;
+            maxTierReached = impr.type === 'research' ? (s.get(impr.name) || 0) === impr.tiers : false;
 
         if (!li) {
             return;
         }
 
-        dom.get('.title', li).innerHTML = cnItem(this.getImprovementTitle(impr));
+        dom.get('.title', li).innerHTML = this.getImprovementTitle(impr);
 
         price = this.actor.getImprPrice(impr);
 
@@ -4808,7 +5262,7 @@
 
     game.ScreenComponent.prototype.displayAchievement = function (achievement) {
         this.displayNews('achievement',
-                         string.format('新成就: <span>{0}</span>!', cnItem(achievement.name)),
+                         string.format('New achievement: <span>{0}</span>!', achievement.name),
                          achievement.desc);
         /*
         this.emitter.emit(this.system, 20, function () {
@@ -4902,9 +5356,9 @@
             desc.innerHTML = '';
         }
         if (needLevelUp) {
-            desc.innerHTML += '级别可用 ' + workerOrImprOrText.level + '.';
+            desc.innerHTML += 'Available at level ' + workerOrImprOrText.level + '.';
         } else if (typeof workerOrImprOrText === 'object' && workerOrImprOrText.price > this.state.get('gold') && !bought) {
-            desc.innerHTML += '<br /><br />没有足够的黄金!';
+            desc.innerHTML += '<br /><br />Not enough gold!';
         }
 
         tt.style.left = pos.left + 'px';
@@ -4932,11 +5386,11 @@
         }
         n = this.state.get(workerOrImpr.name);
         if (n > 0) {
-            txt += string.format('<br /><br />按 [Shift + Click] 去出售获得 {0} 黄金',
+            txt += string.format('<br /><br />[Shift + Click] to sell for {0} gold',
                 utilities.prettify(this.actor.getWorkerSellPrice(workerOrImpr), '&nbsp;'));
         }
         if (this.actor.isWorkerBanned(workerOrImpr)) {
-            txt += string.format('<br /><br />策略阻止此工作人员正常工作!',
+            txt += string.format('<br /><br />A policy prevent this worker to be functional!',
                 utilities.prettify(this.actor.getWorkerSellPrice(workerOrImpr), '&nbsp;'));
         }
 
@@ -4955,7 +5409,7 @@
 
         has = this.state.get('improvements').indexOf(impr.name) > -1;
         if (has) {
-            txt += string.format('<br /><br />按 [Shift + Click] 去撤销 {0} 黄金',
+            txt += string.format('<br /><br />[Shift + Click] to revoke for {0} gold',
                 utilities.prettify(this.actor.getImprSellPrice(impr), '&nbsp;'));
         }
 
@@ -4971,7 +5425,7 @@
             num = num.toFixed(1);
         }
         return txt.replace('[chop]', utilities.prettify(num, '&nbsp;') + ' ' +
-                 (num <= 1 ? '树' : '树'));
+                 (num <= 1 ? 'tree' : 'trees'));
     };
 
     game.ScreenComponent.prototype.formatDescriptionYields = function (worker, txt) {
@@ -4982,7 +5436,7 @@
             num = num.toFixed(1);
         }
         return txt.replace('[yields]', utilities.prettify(num, '&nbsp;') + ' ' +
-                 (num <= 1 ? '树' : '树'));
+                 (num <= 1 ? 'tree' : 'trees'));
     };
 
     game.ScreenComponent.prototype.formatDescriptionGold = function (worker, txt) {
@@ -4992,7 +5446,7 @@
         } else if (num % 1 !== 0) {
             num = num.toFixed(1);
         }
-        return txt.replace('[yieldsGold]', utilities.prettify(num, '&nbsp;') + ' 黄金');
+        return txt.replace('[yieldsGold]', utilities.prettify(num, '&nbsp;') + ' gold');
     };
 
     game.ScreenComponent.prototype.formatTemperature = function (celsius, showPlus) {
@@ -5153,9 +5607,9 @@
         }.bind(this), 1);
 
         if (this.state.has('Eco dome') && this.state.get('ppm') > 500) {
-            dom.get('#win-message').textContent = '当外面的世界在燃烧的时候，你可以安全地在你的生态穹顶里吃爆米花。成千上万的气候移民乞求进入，但你不会让他们进来。他们把地球搞砸了，不是吗?';
+            dom.get('#win-message').textContent = 'You safely eat popcorn in your Eco dome, while outside the world is burning. Thousands of climate migrants beg the entrance but you won\'t let them in. They fucked up Earth, isn\'t it?';
         } else if (this.state.has('Eco dome') && this.state.get('tp') < 280) {
-            dom.get('#win-message').textContent = '多么美好的时光啊!生态圆顶外面正在下雪。人性是冰冷的，但别担心，你和你的有钱朋友们是安全的。做得很好。';
+            dom.get('#win-message').textContent = 'What a time to be alive! It\'s snowing outside the Eco dome. Humanity is freezing, but no worry, you and your rich friends are safe. Well done.';
         }
     };
 
@@ -5219,19 +5673,19 @@
         unique: true,
         key: 'totalTrees',
         value: 5,
-        desc: '你已经种了5棵树了!这是一个很好的开始，老伙计!'
+        desc: 'You\'ve grown 5 trees! That\'s a very good start old chap!'
     }, {
         name: 'Planter',
         unique: true,
         key: 'totalTrees',
         value: 100,
-        desc: '你已经种了100棵树。做得好!'
+        desc: 'You\'ve grown 100 trees. Well done!'
     }, {
         name: 'Master Planter',
         unique: true,
         key: 'totalTrees',
         value: 1000,
-        desc: '你已经种了1000棵树!我们是认真的...'
+        desc: 'You\'ve grown 1000 trees! We\'re getting serious...'
     },
 
 
@@ -5243,19 +5697,19 @@
         unique: true,
         key: 'hires',
         value: 10,
-        desc: '你已经雇佣了10人来帮助你。'
+        desc: 'You\'ve hired 10 people to help you.'
     }, {
         name: 'Senior Manager',
         unique: true,
         key: 'hires',
         value: 50,
-        desc: '你已经雇佣了50人来帮助你。'
+        desc: 'You\'ve hired 50 people to help you.'
     }, {
         name: 'VP Manager',
         unique: true,
         key: 'hires',
         value: 200,
-        desc: '你已经雇佣了200人来帮助你。'
+        desc: 'You\'ve hired 200 people to help you.'
     },
 
     /// CLICKS
@@ -5264,25 +5718,25 @@
         unique: true,
         key: 'clicks',
         value: 500,
-        desc: '你已经点击了500次。 你的手指怎么样？'
+        desc: 'You clicked 500 times already. How is your finger?'
     }, {
         name: 'Junior Clicker',
         unique: true,
         key: 'clicks',
         value: 5000,
-        desc: '你已经点击了5000次。 好。'
+        desc: 'You clicked 5000 times already. Ok.'
     }, {
         name: 'Senior Clicker',
         unique: true,
         key: 'clicks',
         value: 10000,
-        desc: '10000 次点击!! 真是了不起'
+        desc: '10000 clicks!! That\'s something'
     }, {
         name: 'Senior Clicker',
         unique: true,
         key: 'clicks',
         value: 50000,
-        desc: '看起来你要去某个地方！!'
+        desc: 'Looks like you\'re going somewhere!'
     }];
 
 }());
@@ -5294,15 +5748,15 @@
     var definitions = bloom.ns('game.definitions');
 
     definitions.facts = [
-        '温度滞后于二氧化碳浓度30年。',
-        '树木通常需要一年的时间才能长到足够吸收二氧化碳并被砍伐。',
-        '生态穹顶为你赢得了这场比赛。但这就是你真正想要的吗?',
-        '研究可以显著提高你的点击效果!',
-        '如果温度异常超过3.5℃，你就输了!',
-        '如果温度异常超过-6°C，你就输了。',
-        '如果二氧化碳浓度低于230PPM，你就适合进入冰河时代。',
-        '绿色的大按钮可以让你种树。',
-        '当鼠标悬停在树顶计数器时，在工具提示中可以看到正在生长的树的数量。'
+        'Temperature lags 30 years behind CO2 concentration.',
+        'Trees take usually one year to grow enough to absorb CO2 and be chopped.',
+        'The Eco dome wins you the game. But is that what you really want?',
+        'Researches can significantly improve your clicks!',
+        'If the temperature anomaly exceed 3.5°C, you lose!',
+        'If the temperature anomaly pass under -6°C, you lose.',
+        'If the CO2 concentration goes below 230PPM, you\'re good for an Ice Age.',
+        'The big green button let you plant trees.',
+        'The number of growing trees is visible in a tooltip when hovering the top trees counter.'
     ];
 }());
 /*global bloom*/
@@ -5322,7 +5776,7 @@
         },
         tiers: 20,
         yields: 0,
-        desc: '将每次种植点击量提高100%。'
+        desc: 'Improves each planting click by 100%.'
     }, {
         name: 'Fortune Click',
         type: 'research',
@@ -5333,7 +5787,7 @@
         },
         tiers: 20,
         yields: 0,
-        desc: '将每次砍树点击提高100%。'
+        desc: 'Improves each chopping click by 100%.'
     }, {
         name: 'XP Click',
         type: 'research',
@@ -5344,7 +5798,7 @@
         },
         tiers: 5,
         yields: 0,
-        desc: '每点击一次，将获得双倍的等级进度。'
+        desc: 'Doubles level progress for each click.'
     }, {
         name: 'Permaculture',
         type: 'research',
@@ -5355,7 +5809,7 @@
         },
         tiers: 10,
         yields: 0,
-        desc: '工人们种树增加10%。'
+        desc: 'Workers plant 10% more trees.'
     }, {
         name: 'Blue Manager',
         type: 'research',
@@ -5366,7 +5820,7 @@
         },
         tiers: 10,
         yields: 0,
-        desc: '每个工人每周生产0.01 经验。'
+        desc: 'Each worker produces 0.01 XP every week.'
     }, {
         name: 'Gold Manager',
         type: 'research',
@@ -5378,7 +5832,7 @@
         },
         tiers: 10,
         yields: 0,
-        desc: '工人成本降低了5%。支持者和积极分子筹集了更多20%的资金。'
+        desc: 'Workers cost is reduced by 5%. Advocates and Activists raise 20% more money.'
     }, {
         name: 'Forestry tech',
         type: 'research',
@@ -5390,7 +5844,7 @@
         },
         tiers: 5,
         yields: 0,
-        desc: '提高种植点击率100%。提高工人种植率10%。'
+        desc: 'Improves planting clicks by 100%. Improve workers planting rate by 10%.'
     }, {
         name: 'Harvest Tech',
         type: 'research',
@@ -5402,7 +5856,7 @@
         },
         tiers: 5,
         yields: 0,
-        desc: '提高100%的砍树点击。工人们砍树提升10%。'
+        desc: 'Improves chopping clicks by 100%. Workers chop 10% more trees.'
     }, {
         name: 'Net of Stuff',
         type: 'research',
@@ -5418,7 +5872,7 @@
         },
         tiers: 5,
         yields: 0,
-        desc: '连接树木!以及其他一切。提高种植和砍树点击效果10%，工人种植，切割和黄金效果提高10%。二氧化碳排放量增加2%。'
+        desc: 'Connect the trees! And everything else. Improves planting and chopping clicks by 10%, workers planting, chopping and gold raising rate by 10%. CO2 emissions increase by 2%.'
     }, {
         name: 'GMOs',
         type: 'research',
@@ -5430,7 +5884,7 @@
         },
         yields: 0,
         tiers: 5,
-        desc: '转基因树长得很快!种植速度提高20%。增加树木对疾病的抵抗力10%。'
+        desc: 'Genetically modified trees grow fast! Increase planting rate by 20%. Increase trees resistance to diseases by 10%.'
     }, {
         name: 'Eco dome',
         type: 'research',
@@ -5441,7 +5895,7 @@
         size: 'large',
         yields: 0,
         tiers: 1,
-        desc: '从全球变暖中拯救你富有的屁股:建造一个生态圆顶，它将保护你和你的同龄人几千年。赢得这场比赛。'
+        desc: 'Save your rich ass from global warming: build an Eco dome, that will protect you and your peers for thousands of years. Win the game.'
     },
 
 
@@ -5465,7 +5919,7 @@
             ppmPerYearMultiplier: 1.001
         },
         yields: 2,
-        desc: '卖一些“拯救地球!”的标牌。二氧化碳排放量增加0.1%。每周增加额外2黄金。'
+        desc: 'Sell some merch branded: "Save the planet!". CO2 emissions increased by 0.1%. 2 extra gold per week.'
     }, {
         name: 'Media Campaign',
         level: 1,
@@ -5474,7 +5928,7 @@
             plant: 1.10
         },
         yields: 0,
-        desc: '通过媒体宣传来促进种植。提高工人种植率10%。'
+        desc: 'Boost planting with a Media Campaign. Increase workers planting rate by 10%.'
     }, {
         name: 'Free firewood',
         level: 2,
@@ -5484,7 +5938,7 @@
             chop: 1.2
         },
         yields: 40,
-        desc: '自由的柴火!提高20%的砍伐率，增加1%的二氧化碳排放量。每周多赚40黄金。'
+        desc: 'Freedom of getting firewood! Increase chop rate by 20%, increase CO2 emissions by 1%. 40 extra gold per week.'
     }, {
         name: 'National Parks',
         level: 3,
@@ -5493,7 +5947,7 @@
             ppmPerYearMultiplier: 0.99,
             chop: 0.95
         },
-        desc: '保护大自然!减少5%的砍树速度，减少1%的二氧化碳排放。'
+        desc: 'Protect the nature! Reduce chopping rate by 5%, decrease CO2 emissions by 1%.'
     }, {
         name: 'Free market',
         level: 4,
@@ -5502,7 +5956,7 @@
             chop: 1.2,
         },
         yields: 100,
-        desc: '将砍树速度提高20%。每周100黄金。'
+        desc: 'Increase chopping rate by 20%. 100 gold per week.'
     },{
         name: 'Recycling act',
         level: 5,
@@ -5511,7 +5965,7 @@
             ppmPerYearMultiplier: 0.95
         },
         yields: 0,
-        desc: '减少5%的二氧化碳排放。'
+        desc: 'Cut CO2 emissions by 5%.'
     }, {
         name: 'Lobbying',
         level: 6,
@@ -5523,7 +5977,7 @@
             chop: 0.8
         },
         yields: 0,
-        desc: '挑战国会!将采用政策的价格降低10%，撤销政策的成本降低20%。减少工人种植和砍伐率20%。'
+        desc: 'Take on the Congress! Decrease the price of adopting policies by 10%, revoking policies costs 20% less. Decrease workers planting and chopping rate by 20%.'
     }, {
         name: 'Popular initiative',
         level: 7,
@@ -5533,7 +5987,7 @@
             chop: 0.80
         },
         yields: 0,
-        desc: '工人们在空闲时间种树!有时在工作时间。增加50%的种植速度，减少20%的砍伐速度。'
+        desc: 'Workers plant trees on their free time! And sometimes on work time. Increase planting rate by 50%, reduce chopping rate by 20%.'
     }, {
         name: 'UBI',
         level: 8,
@@ -5544,7 +5998,7 @@
             chop: 1.2
         },
         yields: 0,
-        desc: '全民基本收入为每个人提供了一份薪水:让人们感到自己的价值。减少10%的二氧化碳排放。增加工人种植和砍伐率20%。'
+        desc: 'Universal Basic Income provides every human a salary: makes people feel valuable. Decrease CO2 emissions by 10%. Increase workers planting and chopping rate by 20%.'
     },
     {
         name: 'Air traffic ban',
@@ -5555,7 +6009,7 @@
         },
         yields: 0,
         ban: ['Plane', 'Helicopter'],
-        desc: '减少5%的二氧化碳排放。除非采取“紧急状态”，否则飞机和直升机工作人员将被停飞。'
+        desc: 'Decrease CO2 emissions by 5%. Plane and helicopter workers are grounded unless "Emergency State" is adopted.'
     },
     {
         name: 'Emergency State',
@@ -5568,7 +6022,7 @@
         yields: 0,
         ban: ['Activist', 'Advocate'],
         unban: ['Plane', 'Helicopter'],
-        desc: '也被称为警察国家!飞机和直升机工作人员即使采取了“空中交通禁令”政策也能正常工作。活动人士和拥护者不能示威。工人和点击种植效果除以2。'
+        desc: 'Also known as Police State! Plane and helicopter workers operational even if "Air traffic ban" policy adopted. Activists and Advocates can\'t demonstrate. Workers and and click planting divided by 2.'
     },
 
     {
@@ -5579,7 +6033,7 @@
             ppmPerYearMultiplier: 0.95
         },
         yields: 0,
-        desc: '减少5%的二氧化碳排放。'
+        desc: 'Cut CO2 emissions by 5%.'
     }, {
         name: 'Carbon tax',
         level: 12,
@@ -5588,7 +6042,7 @@
             ppmPerYearMultiplier: 0.9
         },
         yields: 5000,
-        desc: '减少10%的二氧化碳排放，每周收获5000黄金。'
+        desc: 'Cut CO2 emissions by 10%, gain 5000 gold every week.'
     },
     {
         name: 'Free-trade Zones',
@@ -5599,7 +6053,7 @@
             ppmPerYearMultiplier: 1.2
         },
         yields: 10000,
-        desc: '让公司关起门来做生意，给他们减税。将工人的砍伐率提高50%。二氧化碳排放量增加20%。由于腐败，每周增加1万金币。'
+        desc: 'Let companies do their business behind closed doors, and give them yuge tax cuts. Increase workers chopping rate by 50%. Increase CO2 emissions by 20%. 10 000 extra gold per week, thanks to corruption.'
     }, {
         name: 'Coal power ban',
         level: 14,
@@ -5607,7 +6061,7 @@
         multipliers: {
             ppmPerYearMultiplier: 0.85
         },
-        desc: '减少15%的二氧化碳排放。'
+        desc: 'Cut CO2 emissions by 15%.'
     }, {
         name: 'Gas cars ban',
         level: 15,
@@ -5616,7 +6070,7 @@
         multipliers: {
             ppmPerYearMultiplier: 0.85
         },
-        desc: '减少15%的二氧化碳排放。'
+        desc: 'Cut CO2 emissions by 15%.'
     }, {
         name: 'Sanctuaries',
         level: 16,
@@ -5626,7 +6080,7 @@
             chop: 0.4,
             clickChop: 0.4
         },
-        desc: '国家公园是不够的:世界上的所有地方都是保护区，让大自然找到新的平衡。减少10%的二氧化碳排放。减少点击和工人砍伐60%。'
+        desc: 'National Parks are not enough: entire parts of the world are sanctuarized, for Nature to find a new balance. Cut CO2 emissions by 10%. Decrease click and workers chopping rate by 60%.'
     }];
 
 }());
@@ -5654,7 +6108,7 @@
         yields: 1,
         level: 0,
         yieldsGold: 0,
-        desc: '花匠喜欢大自然。 偶然, [yields] 每周都会成长。'
+        desc: 'Florists like nature. Incidentally, [yields] will grow every week.'
     }, {
         name: 'Gatherer',
         max: 400,
@@ -5664,7 +6118,7 @@
         level: 0,
         chop: 1,
         yieldsGold: 0,
-        desc: '这些家伙参观森林并采集柴火。 [chop] 每周都会被砍伐'
+        desc: 'These guys visit the forest and gather firewood. [chop] is chopped every week.'
     }, {
         name: 'Arborist',
         max: 300,
@@ -5674,7 +6128,7 @@
         chop: 1,
         level: 1,
         yieldsGold: 0,
-        desc: '树艺师管理森林: 他们种植 [yields] 和砍伐 [chop] 每周.'
+        desc: 'Arborists manage your forest: they plant [yields] and chop [chop] every week.'
     }, {
         name: 'Activist',
         max: 300,
@@ -5683,7 +6137,7 @@
         yields: 1,
         level: 1,
         yieldsGold: 6,
-        desc: '活动家帮助为您的组织筹集资金。 每次筹集 [yieldsGold] 每周。 他们还不时种植 ([yields] 每周).'
+        desc: 'Activists help raise money for your organization. Each raise [yieldsGold] per week. They also plant trees from time to time ([yields] per week).'
     }, {
         name: 'Forester',
         max: 200,
@@ -5692,7 +6146,7 @@
         yields: 100,
         level: 2,
         yieldsGold: 0,
-        desc: '护林人种植 [yields] 每周.'
+        desc: 'Foresters plant [yields] every week.'
     }, {
         name: 'Lumberjack',
         max: 200,
@@ -5702,7 +6156,7 @@
         level: 2,
         chop: 100,
         yieldsGold: 0,
-        desc: '伐木工人是砍伐的专业人士，砍树 [chop] 每周.'
+        desc: 'Lumberjacks are professionals who chop [chop] every week.'
     }, {
         name: 'Ranger',
         max: 150,
@@ -5711,7 +6165,7 @@
         yields: 600,
         level: 3,
         yieldsGold: 0,
-        desc: '巡游者种植 [yields] 每周.'
+        desc: 'Rangers plant [yields] every week.'
     }, {
         name: 'Advocate',
         max: 150,
@@ -5721,7 +6175,7 @@
         level: 3,
         chop: 0,
         yieldsGold: 400,
-        desc: '倡导者比积极分子更强大: 他们募集 [yieldsGold] 每周!'
+        desc: 'Advocates are more powerfull than activists: they raise [yieldsGold] per week!'
     }, {
         name: 'District Ranger',
         max: 100,
@@ -5730,7 +6184,7 @@
         yields: 3500,
         level: 4,
         yieldsGold: 0,
-        desc: '护林员种树 [yields] 每周。'
+        desc: 'District Rangers plant [yields] every week.'
     }, {
         name: 'Delimber',
         max: 100,
@@ -5740,7 +6194,7 @@
         level: 4,
         chop: 3500,
         yieldsGold: 0,
-        desc: '打枝机是砍伐的轻型收割车，砍树 [chop] 每周。'
+        desc: 'Delimbers are light harvesting vehicules that chop [chop] per week.'
     }, {
         name: 'Tree planter',
         max: 75,
@@ -5749,7 +6203,7 @@
         yields: 20000,
         level: 5,
         yieldsGold: 0,
-        desc: '播种机器。 它们种树 [yields] 每周。'
+        desc: 'Planting machine! They plant [yields] per week.'
     }, {
         name: 'Harvester',
         max: 75,
@@ -5759,7 +6213,7 @@
         level: 5,
         chop: 20000,
         yieldsGold: 0,
-        desc: '收割机砍树 [chop] 每周.'
+        desc: 'Harvesters chop [chop] per week.'
     }, {
         name: 'Helicopter',
         max: 50,
@@ -5768,7 +6222,7 @@
         yields: 100000,
         level: 6,
         yieldsGold: 0,
-        desc: '空中播种非常有效: 直升机播种 [yields] 每周！'
+        desc: 'Aerial seeding is very efficient: helicopters plant [yields] per week!'
     }, {
         name: 'Heavy delimber',
         max: 50,
@@ -5778,7 +6232,7 @@
         level: 6,
         chop: 80000,
         yieldsGold: 0,
-        desc: '重型打枝机比打枝机好很多: 它们砍树 [chop] 每周.'
+        desc: 'Heavy delimbers are a lot better than delimbers: they chop [chop] per week.'
     }, {
         name: 'Plane',
         max: 25,
@@ -5787,7 +6241,7 @@
         yields: 500000,
         level: 7,
         yieldsGold: 0,
-        desc: '空中播种非常有效: [yields] 每周 种植!',
+        desc: 'Aerial seeding is very efficient: [yields] per week are planted!',
         type: 'plane'
     }, {
         name: 'Grapple',
@@ -5798,7 +6252,7 @@
         chop: 250000,
         level: 7,
         yieldsGold: 0,
-        desc: '抓钩是强大的机器，它们砍树 [chop] 每周。'
+        desc: 'Grapples are powerful machines that chop [chop] per week.'
     }];
 
 }());

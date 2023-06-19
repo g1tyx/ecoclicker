@@ -111,30 +111,47 @@
 
 (function () {
     'use strict';
-    
+
     var utilities = bloom.ns('utilities');
 
     utilities.Pool = function Pool(constructor) {
         this.pool = [];
         this.constructor = constructor;
+        this.instanciated = 0;
+        this.reused = 0;
     };
 
     utilities.Pool.prototype = {
         get: function (options) {
             var p = this.pool,
-                i;
+                i,
+                k;
+
             if (p.length) {
                 i = p.splice(0, 1)[0];
+                if (!!options) {
+                    for (k in options) {
+                        if (options.hasOwnProperty(k)) {
+                            i[k] = options[k];
+                        }
+                    }
+                }
             } else {
                 i = new (this.constructor)(options);
             }
+
             return i;
         },
         release: function (instance) {
-            if (!(instance instanceof this.constructor)) {
+            if (!(instance instanceof (this.constructor))) {
                 throw new Error('bloom: Releasing wrong class in pool');
             }
             this.pool.push(instance);
+        },
+        releaseAll: function (instances) {
+            for (var i = 0, l = instances.length; i < l; i += 1) {
+                this.release(instances[i]);
+            }
         }
     };
 
@@ -398,13 +415,17 @@
 
     network.SoundLoader.prototype = {
         load: function(callback) {
-            var self = this;
-            this.loader.load(function(err, response) {
+            if (this.file.lazy) {
+                callback(false, this.file, '');
+                return;
+            }
+
+            this.loader.load((function(err, response) {
                 if (!!err) {
-                    throw new Error(string.format('Error while loading file "{0}".', self.file.url));
+                    throw new Error(string.format('Error while loading file "{0}".', this.file.url));
                 }
-                callback(err, self.file, response);
-            });
+                callback(err, this.file, response);
+            }).bind(this));
         }
     };
 
@@ -475,10 +496,12 @@
         this.type = null;
         this.response = null;
         this.atlas = null;
+        this.lazy = false;
 
         // Sound related
         this.loop = false;
         this.volume = 1;
+        this.maxVolume = 1;
 
         if (!!opts) {
             for (var k in opts) {
@@ -511,6 +534,7 @@
         this.cache = {};
         this.currentTotal = 0;
         this.errors = 0;
+        this.loaded = 0;
     };
 
     network.LoaderManager.prototype = {
@@ -521,8 +545,16 @@
         load: function() {
             this.next();
         },
+        updateCounter: function() {
+            var el = document.getElementById('bloom-loader-progress-counter');
+
+            if (!!el) {
+                el.innerText = Math.floor(this.loaded * 100 / this.manifest.count()) + '%';
+            }
+        },
         next: function() {
             var self = this;
+
             while (this.currentTotal < this.parallel && this.manifest.hasNext()) {
                 this.currentTotal += 1;
                 this.loadFile(this.manifest.next(), function(err, f, result) {
@@ -531,6 +563,7 @@
                     } else {
                         self.errors += 1;
                     }
+                    self.loaded += 1;
                     self.currentTotal -= 1;
                     broadcaster.publish('loader.progress');
 
@@ -544,8 +577,12 @@
                             self.next();
                         }
                     }
+
+                    self.updateCounter();
                 });
             }
+
+            this.updateCounter();
         },
         loadFile: function(f, callback) {
             var loader = this.getLoader(f);
@@ -600,6 +637,9 @@
     };
 
     network.Manifest.prototype = {
+        count: function() {
+            return this.manifest.length;
+        },
         add: function(manifest) {
             var i, l = manifest.length, f;
             for (i = 0; i < l; i += 1) {
@@ -732,5 +772,17 @@
                 return file.CSS;
         };
         return file.UNKNOWN;
+    };
+}());
+
+(function() {
+    var core = bloom.ns('core');
+
+    core.log = function() {
+        console.log.apply(null, arguments);
+    };
+
+    core.warn = function() {
+        console.warn.apply(null, arguments);
     };
 }());
